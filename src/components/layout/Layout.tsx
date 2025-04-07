@@ -4,6 +4,9 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 
 export const Layout = () => {
+  // Set document language to Russian
+  document.documentElement.lang = "ru";
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
