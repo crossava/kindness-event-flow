@@ -1,4 +1,4 @@
-
+﻿
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ export const EventCard = ({
   image,
 }: EventCardProps) => {
   const donationProgress = (donations.raised / donations.goal) * 100;
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+  const formattedDate = new Date(date).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -70,13 +70,13 @@ export const EventCard = ({
         
         <div className="flex items-center text-sm text-muted-foreground">
           <Users className="h-4 w-4 mr-2" />
-          {volunteers.joined}/{volunteers.needed} volunteers
+          {volunteers.joined}/{volunteers.needed} волонтеров
         </div>
         
         <div>
           <div className="flex justify-between text-sm mb-1">
-            <span>${donations.raised.toLocaleString()}</span>
-            <span>${donations.goal.toLocaleString()}</span>
+            <span>{donations.raised.toLocaleString()} ₽</span>
+            <span>{donations.goal.toLocaleString()} ₽</span>
           </div>
           <div className="progress-bar">
             <div className="progress-value" style={{ width: `${donationProgress}%` }} />
@@ -84,7 +84,7 @@ export const EventCard = ({
         </div>
         
         <Button asChild className="w-full mt-4">
-          <Link to={`/event/${id}`}>View Details</Link>
+          <Link to={`/event/${id}`}>Посмотреть детали</Link>
         </Button>
       </div>
     </div>

@@ -1,9 +1,9 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { russianContent } from "@/lib/localization/russianContent";
 
 interface EventFiltersProps {
   onCategoryChange: (category: string) => void;
@@ -12,13 +12,13 @@ interface EventFiltersProps {
 }
 
 const categories = [
-  { id: "all", name: "All Categories" },
-  { id: "animals", name: "Animals" },
-  { id: "environment", name: "Environment" },
-  { id: "health", name: "Health" },
-  { id: "education", name: "Education" },
-  { id: "poverty", name: "Poverty" },
-  { id: "community", name: "Community" },
+  { id: "all", nameKey: "all" },
+  { id: "animals", nameKey: "animals" },
+  { id: "environment", nameKey: "environment" },
+  { id: "health", nameKey: "health" },
+  { id: "education", nameKey: "education" },
+  { id: "poverty", nameKey: "poverty" },
+  { id: "community", nameKey: "community" },
 ];
 
 export const EventFilters = ({ 
@@ -37,12 +37,14 @@ export const EventFilters = ({
     onSearch(searchText);
   };
 
+  const { common, categories: categoryLabels } = russianContent;
+
   return (
     <div className="mb-8 space-y-4">
       <form onSubmit={handleSearchSubmit} className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          placeholder="Search events..."
+          placeholder={`${common.search}...`}
           value={searchText}
           onChange={handleSearchChange}
           className="pl-10"
@@ -60,7 +62,7 @@ export const EventFilters = ({
             )}
             onClick={() => onCategoryChange(category.id)}
           >
-            {category.name}
+            {category.id === "all" ? common.all : categoryLabels[category.nameKey as keyof typeof categoryLabels]}
           </Badge>
         ))}
       </div>
