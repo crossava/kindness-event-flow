@@ -1,4 +1,4 @@
-
+﻿
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, LogIn, Menu, X } from "lucide-react";
@@ -18,17 +18,17 @@ export const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-foreground hover:text-charity-primary transition">Home</Link>
-          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition">Dashboard</Link>
-          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition">Organize</Link>
+          <Link to="/" className="text-foreground hover:text-charity-primary transition">Главная</Link>
+          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition">Дашборд</Link>
+          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition">Панель управления</Link>
           <Button asChild variant="ghost">
             <Link to="/dashboard">
               <LogIn className="mr-2 h-4 w-4" />
-              Sign In
+              Войти
             </Link>
           </Button>
           <Button asChild>
-            <Link to="/organizer">Create Event</Link>
+            <Link to="/organizer">Создать мероприятие</Link>
           </Button>
         </div>
 
@@ -47,17 +47,17 @@ export const Navbar = () => {
         isMenuOpen ? "max-h-64 py-4" : "max-h-0 py-0 overflow-hidden"
       )}>
         <div className="container mx-auto px-4 flex flex-col space-y-4">
-          <Link to="/" className="text-foreground hover:text-charity-primary transition px-2 py-2">Home</Link>
-          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition px-2 py-2">Dashboard</Link>
-          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition px-2 py-2">Organize</Link>
+          <Link to="/" className="text-foreground hover:text-charity-primary transition px-2 py-2">Главная</Link>
+          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition px-2 py-2">Дашборд</Link>
+          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition px-2 py-2">Панель управления</Link>
           <Button asChild variant="ghost" className="justify-start">
             <Link to="/dashboard">
               <LogIn className="mr-2 h-4 w-4" />
-              Sign In
+              Войти
             </Link>
           </Button>
           <Button asChild className="w-full">
-            <Link to="/organizer">Create Event</Link>
+            <Link to="/organizer">Создать мероприятие</Link>
           </Button>
         </div>
       </div>

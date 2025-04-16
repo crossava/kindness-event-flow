@@ -63,7 +63,7 @@ export const russianContent = {
     environment: "Окружающая среда",
     health: "Здоровье",
     education: "Образование",
-    poverty: "Бедность",
+    poverty: "Нуждающиеся",
     community: "Сообщество"
   },
   volunteers: {

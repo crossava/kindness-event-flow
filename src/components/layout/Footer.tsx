@@ -13,34 +13,34 @@ export const Footer = () => {
               <span className="text-lg font-heading font-bold">CharityConnect</span>
             </div>
             <p className="text-muted-foreground text-sm">
-              Connecting volunteers and donors with meaningful causes around the world.
+              Объединяем волонтеров по всей стране.
             </p>
           </div>
           
           <div>
-            <h3 className="font-heading font-medium mb-4">Quick Links</h3>
+            <h3 className="font-heading font-medium mb-4">Быстрый доступ</h3>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-sm text-muted-foreground hover:text-charity-primary">Home</Link></li>
-              <li><Link to="/dashboard" className="text-sm text-muted-foreground hover:text-charity-primary">Dashboard</Link></li>
-              <li><Link to="/organizer" className="text-sm text-muted-foreground hover:text-charity-primary">Organize</Link></li>
+              <li><Link to="/" className="text-sm text-muted-foreground hover:text-charity-primary">Главная</Link></li>
+              <li><Link to="/dashboard" className="text-sm text-muted-foreground hover:text-charity-primary">Дашборд</Link></li>
+              <li><Link to="/organizer" className="text-sm text-muted-foreground hover:text-charity-primary">Панель управления</Link></li>
             </ul>
           </div>
           
           <div>
-            <h3 className="font-heading font-medium mb-4">Categories</h3>
+            <h3 className="font-heading font-medium mb-4">Категории</h3>
             <ul className="space-y-2">
-              <li><Link to="/?category=animals" className="text-sm text-muted-foreground hover:text-charity-primary">Animals</Link></li>
-              <li><Link to="/?category=environment" className="text-sm text-muted-foreground hover:text-charity-primary">Environment</Link></li>
-              <li><Link to="/?category=health" className="text-sm text-muted-foreground hover:text-charity-primary">Health</Link></li>
-              <li><Link to="/?category=education" className="text-sm text-muted-foreground hover:text-charity-primary">Education</Link></li>
+              <li><Link to="/?category=animals" className="text-sm text-muted-foreground hover:text-charity-primary">Животные</Link></li>
+              <li><Link to="/?category=environment" className="text-sm text-muted-foreground hover:text-charity-primary">Окружающая среда</Link></li>
+              <li><Link to="/?category=health" className="text-sm text-muted-foreground hover:text-charity-primary">Здоровье</Link></li>
+              <li><Link to="/?category=education" className="text-sm text-muted-foreground hover:text-charity-primary">Образование</Link></li>
             </ul>
           </div>
           
           <div>
-            <h3 className="font-heading font-medium mb-4">Contact</h3>
+            <h3 className="font-heading font-medium mb-4">Контакты</h3>
             <ul className="space-y-2">
               <li className="text-sm text-muted-foreground">support@charityconnect.com</li>
-              <li className="text-sm text-muted-foreground">+1 (555) 123-4567</li>
+              <li className="text-sm text-muted-foreground">+7 (999) 99-99</li>
             </ul>
           </div>
         </div>

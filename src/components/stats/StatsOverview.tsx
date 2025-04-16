@@ -1,5 +1,5 @@
-
-import { DollarSign, Users, Calendar, Heart } from "lucide-react";
+﻿import { DollarSign, Users, Calendar, Heart } from "lucide-react";
+import { RubleIcon } from "@/components/icons";
 
 interface StatsOverviewProps {
   totalEvents: number;
@@ -21,7 +21,7 @@ export const StatsOverview = ({
           <Calendar className="h-6 w-6 text-charity-primary" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Total Events</p>
+          <p className="text-sm text-muted-foreground">Всего событий</p>
           <p className="text-2xl font-heading font-semibold">{totalEvents}</p>
         </div>
       </div>
@@ -31,18 +31,18 @@ export const StatsOverview = ({
           <Users className="h-6 w-6 text-charity-dark" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Total Volunteers</p>
+          <p className="text-sm text-muted-foreground">Волонтёров</p>
           <p className="text-2xl font-heading font-semibold">{totalVolunteers}</p>
         </div>
       </div>
       
       <div className="charity-card flex items-center space-x-4">
         <div className="h-12 w-12 rounded-full bg-charity-accent/30 flex items-center justify-center">
-          <DollarSign className="h-6 w-6 text-charity-dark" />
+          <RubleIcon className="h-6 w-6 text-charity-dark" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Total Donations</p>
-          <p className="text-2xl font-heading font-semibold">${totalDonations.toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground">Пожертвований</p>
+          <p className="text-2xl font-heading font-semibold">{totalDonations.toLocaleString()} ₽</p>
         </div>
       </div>
       
@@ -51,7 +51,7 @@ export const StatsOverview = ({
           <Heart className="h-6 w-6 text-charity-primary" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Lives Impacted</p>
+          <p className="text-sm text-muted-foreground">Помощь оказана</p>
           <p className="text-2xl font-heading font-semibold">{impactCount.toLocaleString()}</p>
         </div>
       </div>

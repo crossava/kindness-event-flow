@@ -1,4 +1,4 @@
-
+﻿
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,21 +14,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { RubleIcon } from "@/components/icons";
 
 // Mock data for event details
 const mockEvent = {
   id: "1",
-  title: "Clean Beach Day",
-  description: "Join us for a day of beach cleaning to protect marine life and create a cleaner environment for everyone. This initiative aims to remove plastic and other pollutants from our shores, educate participants about marine conservation, and foster a sense of community responsibility for our natural resources. All supplies will be provided, including gloves, trash bags, and refreshments. Families are welcome, and children must be accompanied by an adult.",
+  title: "День чистого пляжа",
+  description: "Присоединяйтесь к нам на день уборки пляжа, чтобы защитить морских обитателей и создать более чистую окружающую среду для всех. Эта инициатива направлена на удаление пластика и других загрязняющих веществ с наших берегов, просвещение участников о сохранении морской среды и воспитание чувства ответственности сообщества за наши природные ресурсы. Все принадлежности будут предоставлены, включая перчатки, мешки для мусора и прохладительные напитки. Приглашаются семьи, дети должны быть в сопровождении взрослых.",
   date: "2025-05-15T10:00:00",
   endDate: "2025-05-15T15:00:00",
-  location: "Oceanside Beach, CA",
-  address: "123 Oceanview Dr, Oceanside, CA 92054",
+  location: "Сочи, Имеретинский пляж",
+  address: "курортный район Имеретинский, федеральная территория Сириус",
   category: "Environment",
-  organizer: "Ocean Conservation Society",
+  organizer: "образовательный центр поддержки талантливых детей в России Сириус",
   volunteers: { needed: 50, joined: 32 },
   donations: { goal: 2000, raised: 1250 },
-  image: "https://images.unsplash.com/photo-1626882737796-9be76f8dba86?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  image: "https://live.staticflickr.com/65535/48453652346_0a7c12f9ec_b.jpg",
 };
 
 const EventPage = () => {
@@ -42,17 +43,17 @@ const EventPage = () => {
   
   const donationProgress = (event.donations.raised / event.donations.goal) * 100;
   
-  const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
+  const formattedDate = new Date(event.date).toLocaleDateString("ru-RU", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
   
-  const formattedTime = `${new Date(event.date).toLocaleTimeString("en-US", {
+  const formattedTime = `${new Date(event.date).toLocaleTimeString("ru-RU", {
     hour: "2-digit",
     minute: "2-digit",
-  })} - ${new Date(event.endDate).toLocaleTimeString("en-US", {
+  })} - ${new Date(event.endDate).toLocaleTimeString("ru-RU", {
     hour: "2-digit",
     minute: "2-digit",
   })}`;
@@ -108,9 +109,9 @@ const EventPage = () => {
               <div className="flex items-center">
                 <Users className="h-5 w-5 mr-3 text-charity-primary" />
                 <div>
-                  <p className="font-medium">Organized by {event.organizer}</p>
+                  <p className="font-medium">Организовано: {event.organizer}</p>
                   <p className="text-sm text-muted-foreground">
-                    {event.volunteers.joined} of {event.volunteers.needed} volunteers joined
+                    {event.volunteers.joined} из {event.volunteers.needed} волонтеров присоединились
                   </p>
                 </div>
               </div>
@@ -120,8 +121,8 @@ const EventPage = () => {
           <div className="charity-card flex flex-col space-y-5">
             <div>
               <div className="flex justify-between text-sm mb-1 font-medium">
-                <span>${event.donations.raised.toLocaleString()}</span>
-                <span>of ${event.donations.goal.toLocaleString()}</span>
+                <span>{event.donations.raised.toLocaleString()} ₽</span>
+                <span>из {event.donations.goal.toLocaleString()} ₽</span>
               </div>
               <div className="progress-bar">
                 <div 
@@ -130,7 +131,7 @@ const EventPage = () => {
                 />
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                {Math.round(donationProgress)}% towards our goal
+                {Math.round(donationProgress)}% нашей цели
               </p>
             </div>
             
@@ -140,8 +141,8 @@ const EventPage = () => {
                 variant="default"
                 onClick={() => setIsDonateDialogOpen(true)}
               >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Donate
+                <RubleIcon className="h-4 w-4 mr-2" />
+                Внести пожертвование
               </Button>
               
               <Button 
@@ -150,7 +151,7 @@ const EventPage = () => {
                 onClick={() => setIsVolunteerDialogOpen(true)}
               >
                 <Users className="h-4 w-4 mr-2" />
-                Join as Volunteer
+                Я волонтер
               </Button>
               
               <Button 
@@ -159,7 +160,7 @@ const EventPage = () => {
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4 mr-2" />
-                Share
+                Поделиться
               </Button>
             </div>
           </div>
@@ -170,32 +171,32 @@ const EventPage = () => {
       <Dialog open={isVolunteerDialogOpen} onOpenChange={setIsVolunteerDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Volunteer for {event.title}</DialogTitle>
+            <DialogTitle>Волонтер для: {event.title}</DialogTitle>
             <DialogDescription>
-              Fill in your details to sign up as a volunteer.
+              Введите свои данные, чтобы зарегистрироваться в качестве волонтера:
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Your Name</Label>
-              <Input id="name" placeholder="Enter your full name" />
+              <Label htmlFor="name">Ваше имя</Label>
+              <Input id="name" placeholder="Введите полное ФИО" />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter your email" />
+              <Input id="email" type="email" placeholder="Укажите свой email" />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" placeholder="Enter your phone number" />
+              <Label htmlFor="phone">Номер телефона</Label>
+              <Input id="phone" placeholder="Введите номер телефона" />
             </div>
           </div>
           
           <DialogFooter>
             <Button onClick={handleVolunteerSubmit}>
-              Confirm
+              Подтвердить
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -204,62 +205,28 @@ const EventPage = () => {
       {/* Donate Dialog */}
       <Dialog open={isDonateDialogOpen} onOpenChange={setIsDonateDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Donate to {event.title}</DialogTitle>
-            <DialogDescription>
-              Your contribution helps make this event possible.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Donation Amount</Label>
-              <div className="flex space-x-2">
-                {["10", "25", "50", "100"].map((amount) => (
-                  <Button
-                    key={amount}
-                    type="button"
-                    variant={donationAmount === amount ? "default" : "outline"}
-                    onClick={() => setDonationAmount(amount)}
-                    className="flex-1"
-                  >
-                    ${amount}
-                  </Button>
-                ))}
-              </div>
-              <Input
-                id="amount"
-                type="number"
-                value={donationAmount}
-                onChange={(e) => setDonationAmount(e.target.value)}
-                className="mt-2"
-                min="1"
-              />
+            <DialogHeader>
+                <DialogTitle>Поддержать мероприятие</DialogTitle>
+                <DialogDescription>
+                    Отсканируйте QR-код для пожертвования. Спасибо за ваш вклад!
+                </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex justify-center py-4">
+                <img
+                    src="https://i.pinimg.com/736x/f6/c3/c6/f6c3c650a0c583bfe48d43fdfb4ab8a3.jpg"
+                    alt="QR код для пожертвования"
+                    className="w-60 h-60 object-contain"
+                />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Your Name</Label>
-              <Input id="name" placeholder="Enter your full name" />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter your email" />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="card">Card Information</Label>
-              <Input id="card" placeholder="Card number" />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button onClick={handleDonateSubmit}>
-              Donate ${donationAmount}
-            </Button>
-          </DialogFooter>
+
+            <DialogFooter>
+                <Button onClick={() => setIsDonateDialogOpen(false)}>
+                    Закрыть
+                </Button>
+            </DialogFooter>
         </DialogContent>
-      </Dialog>
+       </Dialog>
     </div>
   );
 };
