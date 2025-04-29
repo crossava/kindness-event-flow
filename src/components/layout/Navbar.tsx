@@ -123,11 +123,13 @@ export const Navbar = () => {
 
       {/* Модальные окна */}
       <AuthModal 
+        key={isAuthModalOpen ? "login-open" : "login-closed"}
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
       <RegisterModal 
+        key={isRegisterModalOpen ? "register-open" : "register-closed"} // Пересоздаёт форму
         isOpen={isRegisterModalOpen} 
         onClose={() => setIsRegisterModalOpen(false)}
         onRegisterSuccess={() => setIsAuthModalOpen(true)} // После регистрации открываем вход
