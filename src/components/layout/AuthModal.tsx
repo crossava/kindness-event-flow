@@ -4,15 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { authService } from "@/api/authService";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (token: string) => void; // Колбэк после успешного входа
+  onLoginSuccess: (token: string) => void;
 }
 
 export const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,29 +25,16 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) =
     setError(null);
 
     try {
-      const response = await fetch("http://77.232.135.48:9000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Неверный логин или пароль");
-      }
-
-      const data = await response.json();
-      console.log("Успешный вход:", data);
+      // Используем метод login из authService
+      const token = await authService.login(email, password);
+      console.log("Успешный вход. Токен:", token);
 
       // 1. Закрываем модальное окно
       onClose();
 
-      // 2. Сохраняем токен (если API его возвращает)
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        onLoginSuccess(data.token); // Передаем токен в родительский компонент
-      }
+      // 2. Сохраняем токен через authService и передаем в родительский компонент
+      authService.setToken(token);
+      onLoginSuccess(token);
 
       // 3. Перенаправляем на /dashboard
       navigate("/dashboard");
@@ -66,13 +54,13 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) =
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="username">Логин</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              type="text"
-              placeholder="Ваш логин"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              placeholder="Ваш email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>

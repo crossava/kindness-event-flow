@@ -1,28 +1,29 @@
-﻿import { useState } from "react";
+﻿// navbar.tsx
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, LogIn, LogOut, Menu, X, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthModal } from "./AuthModal";
 import { RegisterModal } from "./RegisterModal";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { authService } from "@/api/authService";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [token, setToken] = useState<string | null>(authService.getToken());
   const navigate = useNavigate();
 
-  const socket = useWebSocket("ws://77.232.135.48:9000/ws", token);
+  const socket = authService.initWebSocket(token);
 
   const handleLoginSuccess = (newToken: string) => {
+    authService.setToken(newToken);
     setToken(newToken);
   };
 
   const handleLogout = () => {
-    if (socket?.readyState === WebSocket.OPEN) socket.close();
-    localStorage.removeItem("token");
+    authService.logout(socket);
     setToken(null);
     navigate("/");
   };
@@ -129,10 +130,10 @@ export const Navbar = () => {
         onLoginSuccess={handleLoginSuccess}
       />
       <RegisterModal 
-        key={isRegisterModalOpen ? "register-open" : "register-closed"} // Пересоздаёт форму
+        key={isRegisterModalOpen ? "register-open" : "register-closed"}
         isOpen={isRegisterModalOpen} 
         onClose={() => setIsRegisterModalOpen(false)}
-        onRegisterSuccess={() => setIsAuthModalOpen(true)} // После регистрации открываем вход
+        onRegisterSuccess={() => setIsAuthModalOpen(true)}
       />
     </nav>
   );
