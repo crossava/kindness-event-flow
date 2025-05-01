@@ -1,4 +1,4 @@
-﻿// navbar.tsx
+﻿// src/components/layout/Navbar.tsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,20 +12,38 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [token, setToken] = useState<string | null>(authService.getToken());
+  const [isAuthenticated, setIsAuthenticated] = useState(!!authService.getToken());
   const navigate = useNavigate();
 
-  const socket = authService.initWebSocket(token);
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsAuthenticated(!!authService.getToken());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleLoginSuccess = (newToken: string) => {
     authService.setToken(newToken);
-    setToken(newToken);
+    setIsAuthenticated(true);
+    setIsAuthModalOpen(false);
   };
 
   const handleLogout = () => {
-    authService.logout(socket);
-    setToken(null);
+    authService.logout(null);
+    setIsAuthenticated(false);
     navigate("/");
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleProtectedClick = (e: React.MouseEvent, path: string) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      setIsAuthModalOpen(true);
+      // Можно сохранить целевой путь для перенаправления после авторизации
+      localStorage.setItem('redirectAfterLogin', path);
+    }
   };
 
   return (
@@ -38,11 +56,36 @@ export const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4">
-          <Link to="/" className="text-foreground hover:text-charity-primary transition">Главная</Link>
-          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition">Дашборд</Link>
-          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition">Панель управления</Link>
+          <Link to="/" className="text-foreground hover:text-charity-primary transition">
+            Главная
+          </Link>
           
-          {token ? (
+          <Link 
+            to="/dashboard" 
+            className="text-foreground hover:text-charity-primary transition"
+            onClick={(e) => handleProtectedClick(e, '/dashboard')}
+          >
+            Дашборд
+          </Link>
+          
+          <Link 
+            to="/organizer" 
+            className="text-foreground hover:text-charity-primary transition"
+            onClick={(e) => handleProtectedClick(e, '/organizer')}
+          >
+            Панель управления
+          </Link>
+          
+          <Button asChild>
+            <Link 
+              to="/organizer" 
+              onClick={(e) => handleProtectedClick(e, '/organizer')}
+            >
+              Создать мероприятие
+            </Link>
+          </Button>
+
+          {isAuthenticated ? (
             <Button variant="ghost" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Выйти
@@ -65,10 +108,6 @@ export const Navbar = () => {
               </Button>
             </>
           )}
-
-          <Button asChild>
-            <Link to="/organizer">Создать мероприятие</Link>
-          </Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -86,11 +125,35 @@ export const Navbar = () => {
         isMenuOpen ? "max-h-96 py-4" : "max-h-0 py-0 overflow-hidden"
       )}>
         <div className="container mx-auto px-4 flex flex-col space-y-4">
-          <Link to="/" className="text-foreground hover:text-charity-primary transition px-2 py-2">Главная</Link>
-          <Link to="/dashboard" className="text-foreground hover:text-charity-primary transition px-2 py-2">Дашборд</Link>
-          <Link to="/organizer" className="text-foreground hover:text-charity-primary transition px-2 py-2">Панель управления</Link>
+          <Link to="/" className="text-foreground hover:text-charity-primary transition px-2 py-2">
+            Главная
+          </Link>
           
-          {token ? (
+          <Link 
+            to="/dashboard" 
+            className="text-foreground hover:text-charity-primary transition px-2 py-2"
+            onClick={(e) => handleProtectedClick(e, '/dashboard')}
+          >
+            Дашборд
+          </Link>
+          
+          <Link 
+            to="/organizer" 
+            className="text-foreground hover:text-charity-primary transition px-2 py-2"
+            onClick={(e) => handleProtectedClick(e, '/organizer')}
+          >
+            Панель управления
+          </Link>
+          
+          <Button 
+            asChild 
+            className="w-full"
+            onClick={(e) => handleProtectedClick(e, '/organizer')}
+          >
+            <Link to="/organizer">Создать мероприятие</Link>
+          </Button>
+
+          {isAuthenticated ? (
             <Button variant="ghost" className="justify-start" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Выйти
@@ -115,25 +178,30 @@ export const Navbar = () => {
               </Button>
             </>
           )}
-
-          <Button asChild className="w-full">
-            <Link to="/organizer">Создать мероприятие</Link>
-          </Button>
         </div>
       </div>
 
       {/* Модальные окна */}
       <AuthModal 
-        key={isAuthModalOpen ? "login-open" : "login-closed"}
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
+        onLoginSuccess={(token) => {
+          handleLoginSuccess(token);
+          // Перенаправляем после авторизации
+          const redirectPath = localStorage.getItem('redirectAfterLogin');
+          if (redirectPath) {
+            navigate(redirectPath);
+            localStorage.removeItem('redirectAfterLogin');
+          }
+        }}
       />
       <RegisterModal 
-        key={isRegisterModalOpen ? "register-open" : "register-closed"}
         isOpen={isRegisterModalOpen} 
         onClose={() => setIsRegisterModalOpen(false)}
-        onRegisterSuccess={() => setIsAuthModalOpen(true)}
+        onRegisterSuccess={() => {
+          setIsRegisterModalOpen(false);
+          setIsAuthModalOpen(true);
+        }}
       />
     </nav>
   );
