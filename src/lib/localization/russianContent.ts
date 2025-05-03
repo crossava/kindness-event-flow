@@ -52,11 +52,12 @@ export const russianContent = {
     totalEvents: "Всего мероприятий",
     totalVolunteers: "Всего волонтеров",
     totalDonations: "Всего пожертвований",
-    impactScore: "Рейтинг влияния",
+    impactScore: "Помощь оказана",
     noEventsFound: "Мероприятия не найдены",
     adjustFilters: "Попробуйте изменить фильтры, чтобы увидеть больше результатов.",
     noEventsCreated: "Вы еще не создали мероприятий.",
     clearFilters: "Очистить фильтры",
+    photo: "Фото",
   },
   categories: {
     animals: "Животные",

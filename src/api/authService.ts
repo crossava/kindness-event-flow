@@ -35,8 +35,28 @@ export const authService = {
     }
 
     const data = await response.json();
+    const userId = data.message?.body?.user_id;
+    if (userId) {
+        authService.setUserId(userId);
+    }
+
     return data.token;
   },
+
+    // Сохраняем user_id
+    setUserId: (userId: string) => {
+        localStorage.setItem("user_id", userId);
+    },
+
+    // Получаем user_id
+    getUserId: (): string | null => {
+        return localStorage.getItem("user_id");
+    },
+
+    // Удаляем user_id
+    removeUserId: () => {
+        localStorage.removeItem("user_id");
+    },
 
   // Регистрация
   register: async (email: string, password: string, fullName: string, role: string) => {
@@ -73,6 +93,7 @@ export const authService = {
       socket.close();
     }
     authService.removeToken();
+    authService.removeUserId();
   },
 
   // Подтверждение регистрации
@@ -94,5 +115,39 @@ export const authService = {
     }
 
     return await response.json();
+  },
+
+  // Создание нового мероприятия
+  createEvent: async (eventData: {
+    title: string;
+    description: string;
+    start_datetime: string;
+    location: string;
+    required_volunteers: number;
+    category: string;
+    created_by: string;
+    photo_url: string;
+  }, socket: WebSocket | null) => {
+    
+    return new Promise<void>((resolve, reject) => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return reject(new Error("WebSocket не подключён"));
+    }
+
+    const message = {
+      topic: "event_requests",
+      message: {
+        action: "create_event",
+        data: eventData
+      }
+    };
+
+    try {
+      socket.send(JSON.stringify(message));
+      resolve(); // Если не требуется подтверждение от сервера
+    } catch (error) {
+      reject(error);
+    }
+     });
   },
 };

@@ -1,12 +1,12 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, ChevronDown, ListChecks, BarChart3, Plus, Search, Users, DollarSign } from "lucide-react";
+import { Calendar, ChevronDown, ListChecks, BarChart3, Plus, Search, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authService } from "@/api/authService";
 import { 
   Dialog, 
   DialogContent, 
@@ -40,7 +40,6 @@ import {
 import { russianContent } from "@/lib/localization/russianContent";
 import { EventForm } from "@/components/forms/EventForm";
 import { VolunteerManagementForm } from "@/components/forms/VolunteerManagementForm";
-import { DonationViewForm } from "@/components/forms/DonationViewForm";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 // Mock data for organizer events
@@ -53,7 +52,6 @@ const organizerEvents = [
     location: "Сочи, Имеретинский пляж",
     category: "Окружающая среда",
     volunteers: { needed: 50, joined: 32 },
-    donations: { goal: 2000, raised: 1250 },
     status: "Активно",
   },
   {
@@ -64,7 +62,6 @@ const organizerEvents = [
     location: "ЦПКиО Маяковского, Екатеринбург",
     category: "Здоровье",
     volunteers: { needed: 40, joined: 25 },
-    donations: { goal: 7500, raised: 4000 },
     status: "Активно",
   },
   {
@@ -75,7 +72,6 @@ const organizerEvents = [
     location: "Парк Химмаш, Екатеринбург",
     category: "Нуждающиеся",
     volunteers: { needed: 35, joined: 15 },
-    donations: { goal: 4000, raised: 1500 },
     status: "Черновик",
   },
 ];
@@ -89,22 +85,14 @@ const volunteersData = [
   { id: "5", name: "Ольга Новикова", email: "olga@example.com", phone: "+7 (555) 567-8901", event: "Здоровье сообщества", joinDate: "2025-03-19" },
 ];
 
-// Mock data for donations
-const donationsData = [
-  { id: "1", donor: "Анонимный", amount: 50, event: "Чистый пляжный день", date: "2025-03-15" },
-  { id: "2", name: "Роберт Козлов", email: "robert@example.com", amount: 100, event: "Чистый пляжный день", date: "2025-03-16" },
-  { id: "3", name: "Мария Васильева", email: "maria@example.com", amount: 75, event: "Здоровье сообщества", date: "2025-03-17" },
-  { id: "4", name: "Дмитрий Морозов", email: "dmitry@example.com", amount: 200, event: "Здоровье сообщества", date: "2025-03-18" },
-  { id: "5", name: "Екатерина Волкова", email: "ekaterina@example.com", amount: 150, event: "Чистый пляжный день", date: "2025-03-19" },
-];
-
 const OrganizerPanel = () => {
   const { common, events, categories } = russianContent;
   const [activeTab, setActiveTab] = useState("events");
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+
   // State for edit dialog
   const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<any | null>(null);
@@ -112,10 +100,6 @@ const OrganizerPanel = () => {
   // State for volunteer management dialog
   const [isVolunteerManagementOpen, setIsVolunteerManagementOpen] = useState(false);
   const [currentEventForVolunteers, setCurrentEventForVolunteers] = useState<any | null>(null);
-  
-  // State for donations view dialog
-  const [isDonationViewOpen, setIsDonationViewOpen] = useState(false);
-  const [currentEventForDonations, setCurrentEventForDonations] = useState<any | null>(null);
   
   // State for delete confirmation
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
@@ -131,12 +115,36 @@ const OrganizerPanel = () => {
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase());
     
+
+
     return matchesStatus && matchesSearch;
   });
   
-  const handleCreateEvent = () => {
-    setIsCreateEventDialogOpen(false);
-    toast.success("Мероприятие успешно создано!");
+  const handleCreateEvent = async (eventData: any) => {
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        throw new Error("Пользователь не авторизован");
+      }
+
+      // Преобразуем данные формы в нужный формат
+      const formattedData = {
+        title: eventData.title,
+        description: eventData.description,
+        start_datetime: eventData.date + "T" + eventData.time + ":00",
+        location: eventData.location,
+        required_volunteers: Number(eventData.volunteersNeeded),
+        category: eventData.category,
+        created_by: authService.getUserId(), // Здесь нужно использовать реальный ID пользователя
+        photo_url: eventData.photo
+      };
+
+      const socket = authService.initWebSocket(authService.getToken());
+      await authService.createEvent(formattedData, socket);
+      setIsCreateEventDialogOpen(false);
+        } catch (error) {
+      toast.error(`Ошибка при создании мероприятия: ${error.message}`);
+        }
   };
   
   const handleEditEvent = (eventId: string) => {
@@ -149,9 +157,6 @@ const OrganizerPanel = () => {
   
   const handleSaveEvent = (eventData: any) => {
     console.log("Saving event data:", eventData);
-    // Here you would typically update this in your backend
-    
-    // For this demo, just show a success message
     toast.success("Мероприятие обновлено!");
   };
   
@@ -163,23 +168,13 @@ const OrganizerPanel = () => {
     }
   };
   
-  const handleViewDonations = (eventId: string) => {
-    const event = organizerEvents.find(e => e.id === eventId);
-    if (event) {
-      setCurrentEventForDonations(event);
-      setIsDonationViewOpen(true);
-    }
-  };
-  
   const confirmDeleteEvent = (eventId: string) => {
     setEventToDelete(eventId);
     setIsDeleteConfirmationOpen(true);
   };
   
   const handleDeleteEvent = () => {
-    // Here you would delete the event in your backend
     console.log("Deleting event:", eventToDelete);
-    
     toast.success("Мероприятие удалено!");
     setIsDeleteConfirmationOpen(false);
   };
@@ -190,9 +185,7 @@ const OrganizerPanel = () => {
   };
   
   const handleDeleteVolunteer = () => {
-    // Here you would delete the volunteer in your backend
     console.log("Deleting volunteer:", volunteerToDelete);
-    
     toast.success("Волонтер удален!");
     setIsVolunteerDeleteConfirmOpen(false);
   };
@@ -201,10 +194,6 @@ const OrganizerPanel = () => {
   const totalEvents = organizerEvents.length;
   const totalVolunteers = organizerEvents.reduce(
     (sum, event) => sum + event.volunteers.joined, 
-    0
-  );
-  const totalDonations = organizerEvents.reduce(
-    (sum, event) => sum + event.donations.raised, 
     0
   );
   
@@ -219,7 +208,7 @@ const OrganizerPanel = () => {
       </div>
       
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{events.totalEvents}</CardTitle>
@@ -243,30 +232,6 @@ const OrganizerPanel = () => {
             </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{events.totalDonations}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <DollarSign className="h-4 w-4 text-charity-primary mr-2" />
-              <span className="text-2xl font-bold">₽{totalDonations.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{events.impactScore}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <BarChart3 className="h-4 w-4 text-charity-primary mr-2" />
-              <span className="text-2xl font-bold">{totalVolunteers * 5 + Math.floor(totalDonations / 100)}</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -278,10 +243,6 @@ const OrganizerPanel = () => {
           <TabsTrigger value="volunteers" className="flex items-center space-x-2">
             <Users className="h-4 w-4" />
             <span>{common.volunteers}</span>
-          </TabsTrigger>
-          <TabsTrigger value="donations" className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4" />
-            <span>{common.donations}</span>
           </TabsTrigger>
         </TabsList>
         
@@ -324,7 +285,6 @@ const OrganizerPanel = () => {
                     <TableHead>{events.date}</TableHead>
                     <TableHead>{events.category}</TableHead>
                     <TableHead>{common.volunteers}</TableHead>
-                    <TableHead>{common.donations}</TableHead>
                     <TableHead>{common.status}</TableHead>
                     <TableHead>{common.actions}</TableHead>
                   </TableRow>
@@ -351,9 +311,6 @@ const OrganizerPanel = () => {
                       </TableCell>
                       <TableCell>
                         {event.volunteers.joined}/{event.volunteers.needed}
-                      </TableCell>
-                      <TableCell>
-                        ₽{event.donations.raised.toLocaleString()} из ₽{event.donations.goal.toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
@@ -384,9 +341,6 @@ const OrganizerPanel = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleManageVolunteers(event.id)}>
                               {events.manageVolunteers}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewDonations(event.id)}>
-                              {events.viewDonations}
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => confirmDeleteEvent(event.id)}>
                               {common.delete}
@@ -489,68 +443,6 @@ const OrganizerPanel = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {/* Donations Tab */}
-        <TabsContent value="donations">
-          <Card>
-            <CardHeader className="pb-0">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-                <CardTitle>{common.donations}</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder={`${common.search} ${common.donations.toLowerCase()}...`}
-                    className="pl-10 w-full md:w-60"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{russianContent.donations.donor}</TableHead>
-                    <TableHead>{russianContent.donations.amount}</TableHead>
-                    <TableHead>{russianContent.donations.event}</TableHead>
-                    <TableHead>{russianContent.donations.date}</TableHead>
-                    <TableHead>{common.actions}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {donationsData.map((donation) => (
-                    <TableRow key={donation.id}>
-                      <TableCell className="font-medium">
-                        {donation.name || donation.donor}
-                      </TableCell>
-                      <TableCell>₽{donation.amount}</TableCell>
-                      <TableCell>{donation.event}</TableCell>
-                      <TableCell>
-                        {new Date(donation.date).toLocaleDateString("ru-RU")}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toast.success(`${donation.email ? "Отправлено благодарственное письмо" : "Записана информация о доноре"}`)}>
-                              {donation.email ? russianContent.donations.sendThankYou : russianContent.donations.recordInfo}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.success("Просмотр деталей пожертвования")}>
-                              {russianContent.donations.viewDetails}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
       
       {/* Create Event Dialog */}
@@ -577,16 +469,6 @@ const OrganizerPanel = () => {
           onOpenChange={setIsVolunteerManagementOpen}
           eventTitle={currentEventForVolunteers.title}
           volunteers={volunteersData.filter(v => v.event === currentEventForVolunteers.title)}
-        />
-      )}
-      
-      {/* View Donations Dialog */}
-      {currentEventForDonations && (
-        <DonationViewForm
-          open={isDonationViewOpen}
-          onOpenChange={setIsDonationViewOpen}
-          eventTitle={currentEventForDonations.title}
-          donations={donationsData.filter(d => d.event === currentEventForDonations.title)}
         />
       )}
       

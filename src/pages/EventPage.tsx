@@ -119,32 +119,7 @@ const EventPage = () => {
           </div>
           
           <div className="charity-card flex flex-col space-y-5">
-            <div>
-              <div className="flex justify-between text-sm mb-1 font-medium">
-                <span>{event.donations.raised.toLocaleString()} ₽</span>
-                <span>из {event.donations.goal.toLocaleString()} ₽</span>
-              </div>
-              <div className="progress-bar">
-                <div 
-                  className="progress-value" 
-                  style={{ width: `${donationProgress}%` }} 
-                />
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {Math.round(donationProgress)}% нашей цели
-              </p>
-            </div>
-            
             <div className="space-y-3">
-              <Button 
-                className="w-full" 
-                variant="default"
-                onClick={() => setIsDonateDialogOpen(true)}
-              >
-                <RubleIcon className="h-4 w-4 mr-2" />
-                Внести пожертвование
-              </Button>
-              
               <Button 
                 className="w-full" 
                 variant="outline"

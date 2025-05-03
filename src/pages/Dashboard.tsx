@@ -38,34 +38,6 @@ const userEvents = [
   },
 ];
 
-// Mock data for user donations
-const userDonations = [
-  {
-    id: "1",
-    eventId: "2",
-    eventTitle: "Помощь приютам для животных",
-    amount: 50,
-    date: "2025-04-05",
-    status: "Completed",
-  },
-  {
-    id: "2",
-    eventId: "4",
-    eventTitle: "Образование для всех",
-    amount: 100,
-    date: "2025-03-22",
-    status: "Completed",
-  },
-  {
-    id: "3",
-    eventId: "6",
-    eventTitle: "Оживление парка",
-    amount: 75,
-    date: "2025-02-10",
-    status: "Completed",
-  },
-];
-
 // Mock user profile data
 const userProfile = {
   name: "Алиса Иванова",
@@ -114,61 +86,6 @@ const Dashboard = () => {
                 </p>
                 <Button asChild>
                   <a href="/">Просмотр событий</a>
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          {/* My Donations Tab */}
-          <TabsContent value="donations">
-            <h2 className="text-2xl font-heading font-semibold mb-6">Мои пожертвования</h2>
-            
-            {userDonations.length > 0 ? (
-              <div className="space-y-4">
-                {userDonations.map((donation) => (
-                  <Card key={donation.id}>
-                    <CardHeader className="flex flex-row items-center space-x-4 pb-2">
-                      <div className="h-12 w-12 rounded-full bg-charity-primary/10 flex items-center justify-center">
-                        <RubleIcon className="h-6 w-6 text-charity-primary" />
-                      </div>
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{donation.amount} ₽</CardTitle>
-                        <CardDescription>Пожертвовано для: {donation.eventTitle}</CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Дата</span>
-                        <span>
-                          {new Date(donation.date).toLocaleDateString("ru-RU", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm mt-1">
-                        <span className="text-muted-foreground">Статус</span>
-                        <span className="text-charity-primary font-medium">{donation.status}</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="pt-0">
-                      <Button asChild variant="ghost" size="sm" className="ml-auto">
-                        <a href={`/event/${donation.eventId}`}>Просмотр мероприятия</a>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <RubleIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Еще нет пожертвований</h3>
-                <p className="text-muted-foreground mb-4">
-                  Вы еще не сделали ни одного пожертвования. Найдите дело, которое вам небезразлично, и поддержите его.
-                </p>
-                <Button asChild>
-                  <a href="/">Browse Causes</a>
                 </Button>
               </div>
             )}
@@ -255,19 +172,11 @@ const Dashboard = () => {
                     
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground mb-2">Статистика профиля</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
                         <div className="p-4 rounded-lg bg-charity-muted">
                           <p className="text-sm text-muted-foreground">Участия в мероприятиях</p>
                           <p className="text-2xl font-semibold">{userEvents.length}</p>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-charity-muted">
-                          <p className="text-sm text-muted-foreground">Всего пожертвовано</p>
-                          <p className="text-2xl font-semibold">
-                            {userDonations.reduce((sum, donation) => sum + donation.amount, 0)} ₽
-                          </p>
-                        </div>
-                        
+                        </div>                        
                         <div className="p-4 rounded-lg bg-charity-muted">
                           <p className="text-sm text-muted-foreground">Участник с</p>
                           <p className="text-2xl font-semibold">2024</p>

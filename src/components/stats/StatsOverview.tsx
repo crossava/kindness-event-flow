@@ -15,7 +15,7 @@ export const StatsOverview = ({
   impactCount,
 }: StatsOverviewProps) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4">
       <div className="charity-card flex items-center space-x-4">
         <div className="h-12 w-12 rounded-full bg-charity-primary/10 flex items-center justify-center">
           <Calendar className="h-6 w-6 text-charity-primary" />
@@ -35,17 +35,6 @@ export const StatsOverview = ({
           <p className="text-2xl font-heading font-semibold">{totalVolunteers}</p>
         </div>
       </div>
-      
-      <div className="charity-card flex items-center space-x-4">
-        <div className="h-12 w-12 rounded-full bg-charity-accent/30 flex items-center justify-center">
-          <RubleIcon className="h-6 w-6 text-charity-dark" />
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Пожертвований</p>
-          <p className="text-2xl font-heading font-semibold">{totalDonations.toLocaleString()} ₽</p>
-        </div>
-      </div>
-      
       <div className="charity-card flex items-center space-x-4">
         <div className="h-12 w-12 rounded-full bg-charity-primary/10 flex items-center justify-center">
           <Heart className="h-6 w-6 text-charity-primary" />

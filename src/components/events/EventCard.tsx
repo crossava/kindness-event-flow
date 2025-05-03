@@ -72,17 +72,7 @@ export const EventCard = ({
           <Users className="h-4 w-4 mr-2" />
           {volunteers.joined}/{volunteers.needed} волонтеров
         </div>
-        
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>{donations.raised.toLocaleString()} ₽</span>
-            <span>{donations.goal.toLocaleString()} ₽</span>
-          </div>
-          <div className="progress-bar">
-            <div className="progress-value" style={{ width: `${donationProgress}%` }} />
-          </div>
-        </div>
-        
+                
         <Button asChild className="w-full mt-4">
           <Link to={`/event/${id}`}>Посмотреть детали</Link>
         </Button>

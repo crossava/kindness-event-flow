@@ -18,14 +18,10 @@ export const DashboardTabs = ({
   
   return (
     <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 mb-8">
+      <TabsList className="grid w-full grid-cols-2 mb-8">
         <TabsTrigger value="events" className="flex items-center space-x-2">
           <Calendar className="h-4 w-4" />
           <span>{common.myEvents}</span>
-        </TabsTrigger>
-        <TabsTrigger value="donations" className="flex items-center space-x-2">
-          <Heart className="h-4 w-4" />
-          <span>{common.myDonations}</span>
         </TabsTrigger>
         <TabsTrigger value="profile" className="flex items-center space-x-2">
           <User className="h-4 w-4" />
