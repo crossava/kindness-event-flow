@@ -70,7 +70,7 @@ const EventPage = () => {
 
   const handleShare = () => {
     // In a real app, implement share functionality
-    toast.success("Event link copied to clipboard!");
+    toast.success("Ссылка на событие скопирована!");
   };
   
   return (

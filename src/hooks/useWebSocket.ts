@@ -1,25 +1,48 @@
-// src/hooks/useWebSocket.ts
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { WEBSOCKET_IP } from "@/hooks/DevelopmentConfig.ts";
 
-export const useWebSocket = (url: string, token: string | null) => {
+export const useWebSocket = () => {
   const socketRef = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    
-
-    const socket = new WebSocket(`${url}`);
+    const socket = new WebSocket(WEBSOCKET_IP);
     socketRef.current = socket;
 
-    socket.onopen = () => console.log("WebSocket ïîäêëþ÷åí");
-    socket.onmessage = (event) => console.log("Ïîëó÷åíî ñîîáùåíèå:", event.data);
-    socket.onclose = () => console.log("WebSocket îòêëþ÷åí");
+    socket.onopen = () => {
+      console.log("âœ… WebSocket Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡Ñ‘Ð½");
+      setIsConnected(true);
+    };
+
+    socket.onmessage = (event) => {
+      console.log("ðŸ“© ÐŸÐ¾Ð»ÑƒÑ‡ÐµÐ½Ð¾ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ:", event.data);
+      setLastMessage(event.data);
+    };
+
+    socket.onclose = () => {
+      console.log("âŒ WebSocket ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ Ð·Ð°ÐºÑ€Ñ‹Ñ‚Ð¾");
+      setIsConnected(false);
+    };
+
+    socket.onerror = (error) => {
+      console.error("ðŸ”¥ WebSocket Ð¾ÑˆÐ¸Ð±ÐºÐ°:", error);
+    };
 
     return () => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.close();
       }
     };
-  }, [url, token]);
+  }, []);
 
-  return socketRef.current;
+  const sendMessage = useCallback((data: any) => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      const json = JSON.stringify(data);
+      socketRef.current.send(json);
+      console.log("ðŸ“¤ ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¾:", json);
+    }
+  }, []);
+
+  return { sendMessage, lastMessage, isConnected };
 };

@@ -1,8 +1,9 @@
 ﻿// api/authService.ts
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { SERVER_IP, WEBSOCKET_IP } from '../hooks/DevelopmentConfig';
 
-const API_BASE_URL = "http://77.232.135.48:4000";
-const WS_URL = "ws://77.232.135.48:4000/ws";
+const API_BASE_URL = SERVER_IP;
+const WS_URL = WEBSOCKET_IP;
 
 export const authService = {
   // Сохраняем токен в localStorage

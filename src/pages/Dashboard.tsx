@@ -1,5 +1,5 @@
 ﻿
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 import { TabsContent } from "@/components/ui/tabs";
 import { EventCard } from "@/components/events/EventCard";
@@ -11,6 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, DollarSign, FileEdit } from "lucide-react";
 import { toast } from "sonner";
 import { RubleIcon } from "@/components/icons";
+
+import { useWebSocket } from "@/hooks/useWebSocket";
+const userId = "6820de8bf230d4d641f0e982"; // заменить на реальный ID после подключения авторизации
+
 
 // Mock data for user events
 const userEvents = [
@@ -48,33 +52,85 @@ const userProfile = {
 };
 
 const Dashboard = () => {
+  useWebSocket(); // инициализируем WebSocket-подключение
+
   const [activeTab, setActiveTab] = useState("events");
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(userProfile);
-  
+
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsEditing(false);
     toast.success("Профиль успешно обновлен!");
   };
-  
+
+  const { sendMessage, lastMessage, isConnected } = useWebSocket();
+  const [userEvents, setUserEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isConnected) {
+      sendMessage({
+        topic: "event_requests",
+        message: {
+          action: "get_user_events",
+          data: {
+            user_id: userId,
+          },
+        },
+      });
+    }
+  }, [isConnected, sendMessage]);
+
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    try {
+      const parsed = JSON.parse(lastMessage);
+      console.log("📨 Ответ от WebSocket:", parsed); // <-- вот здесь лог
+
+      if (parsed.topic === "event_responses" && parsed.message?.events) {
+        setUserEvents(parsed.message.events);
+      }
+    } catch (err) {
+      console.error("Ошибка при парсинге сообщения от WebSocket:", err);
+    }
+  }, [lastMessage]);
+
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-heading font-bold mb-8">Ваш дашборд</h1>
-        
-        <DashboardTabs 
-          activeTab={activeTab} 
+
+        <DashboardTabs
+          activeTab={activeTab}
           setActiveTab={setActiveTab}
         >
           {/* My Events Tab */}
           <TabsContent value="events">
             <h2 className="text-2xl font-heading font-semibold mb-6">Мои мероприятия</h2>
-            
+
             {userEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userEvents.map((event) => (
-                  <EventCard key={event.id} {...event} />
+                  <EventCard
+                    key={event.id || event.title}
+                    id={event.id}
+                    title={event.title}
+                    description={event.description}
+                    date={new Date(event.start_datetime).toLocaleDateString()}
+                    location={event.location}
+                    category={event.category}
+                    volunteers={{
+                      needed: event.required_volunteers,
+                      joined: event.volunteers?.length || 0,
+                    }}
+                    donations={{
+                      goal: 0,
+                      raised: 0,
+                    }}
+                    image={event.photo_url || ""}
+                  />
                 ))}
               </div>
             ) : (
@@ -90,11 +146,11 @@ const Dashboard = () => {
               </div>
             )}
           </TabsContent>
-          
+
           {/* Profile Info Tab */}
           <TabsContent value="profile">
             <h2 className="text-2xl font-heading font-semibold mb-6">Данные профиля</h2>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -107,53 +163,53 @@ const Dashboard = () => {
                     <CardDescription>{profileData.email}</CardDescription>
                   </div>
                 </div>
-                
+
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
                   <FileEdit className="h-4 w-4 mr-2" />
                   {isEditing ? "Cancel" : "Изменить профиль"}
                 </Button>
               </CardHeader>
-              
+
               <CardContent>
                 {isEditing ? (
                   <form onSubmit={handleProfileSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Имя</Label>
-                      <Input 
-                        id="name" 
+                      <Input
+                        id="name"
                         value={profileData.name}
                         onChange={(e) => setProfileData({...profileData, name: e.target.value})}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
+                      <Input
+                        id="email"
                         type="email"
                         value={profileData.email}
                         onChange={(e) => setProfileData({...profileData, email: e.target.value})}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="phone">Телефон</Label>
-                      <Input 
+                      <Input
                         id="phone"
                         value={profileData.phone}
                         onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="address">Адрес</Label>
-                      <Input 
+                      <Input
                         id="address"
                         value={profileData.address}
                         onChange={(e) => setProfileData({...profileData, address: e.target.value})}
                       />
                     </div>
-                    
+
                     <Button type="submit" className="w-full">Сохранить изменения</Button>
                   </form>
                 ) : (
@@ -163,20 +219,20 @@ const Dashboard = () => {
                         <h3 className="text-sm font-medium text-muted-foreground">Телефон</h3>
                         <p>{profileData.phone}</p>
                       </div>
-                      
+
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground">Адрес</h3>
                         <p>{profileData.address}</p>
                       </div>
                     </div>
-                    
+
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground mb-2">Статистика профиля</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
                         <div className="p-4 rounded-lg bg-charity-muted">
                           <p className="text-sm text-muted-foreground">Участия в мероприятиях</p>
                           <p className="text-2xl font-semibold">{userEvents.length}</p>
-                        </div>                        
+                        </div>
                         <div className="p-4 rounded-lg bg-charity-muted">
                           <p className="text-sm text-muted-foreground">Участник с</p>
                           <p className="text-2xl font-semibold">2024</p>
