@@ -13,24 +13,30 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+import { WebSocketProvider } from "@/hooks/WebSocketProvider.tsx";
+import React from "react";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="event/:id" element={<EventPage />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="organizer" element={<OrganizerPanel />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <WebSocketProvider> {/* ✅ оборачиваем всё */}
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<HomePage />} />
+              <Route path="event/:id" element={<EventPage />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="organizer" element={<OrganizerPanel />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </WebSocketProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
+
 
 export default App;

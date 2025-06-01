@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { russianContent } from "@/lib/localization/russianContent";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import {authService} from "@/api/authService.ts";
 
 
@@ -46,7 +46,7 @@ interface EventFormProps {
 export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps) => {
   const { events, categories, common } = russianContent;
   const isEditing = !!event;
-  const { sendMessage, lastMessage } = useWebSocket();
+  const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
   const userId = authService.getUserId();
 
 

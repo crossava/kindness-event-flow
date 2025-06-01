@@ -41,8 +41,7 @@ import { russianContent } from "@/lib/localization/russianContent";
 import { EventForm } from "@/components/forms/EventForm";
 import { VolunteerManagementForm } from "@/components/forms/VolunteerManagementForm";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { useWebSocket } from "@/hooks/useWebSocket";
-
+import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 const volunteersData = [
   // можно заменить на реальные данные, если нужно
 ];
@@ -63,7 +62,7 @@ const OrganizerPanel = () => {
   const [isVolunteerDeleteConfirmOpen, setIsVolunteerDeleteConfirmOpen] = useState(false);
   const [volunteerToDelete, setVolunteerToDelete] = useState<string | null>(null);
 
-  const { sendMessage, lastMessage, isConnected } = useWebSocket();
+  const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
   const userId = authService.getUserId();
 
   useEffect(() => {
@@ -103,7 +102,15 @@ const OrganizerPanel = () => {
     }
 
     if (action === "create_event" && payload?.status === "success") {
-      const newEvent = { ...payload.event, id: payload.event._id };
+      const raw = payload.event;
+      const newEvent = {
+        ...raw,
+        id: raw._id,
+        volunteers: {
+          joined: raw.volunteers?.length || 0,
+          needed: raw.required_volunteers,
+        },
+      };
       setOrganizerEvents((prev) => [...prev, newEvent]);
     }
 
