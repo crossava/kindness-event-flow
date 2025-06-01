@@ -25,6 +25,7 @@ const EventPage = () => {
   const { id } = useParams<{ id: string }>();
   const { events, setEvents } = useEventContext();
   const [isVolunteerDialogOpen, setIsVolunteerDialogOpen] = useState(false);
+  const [isUnregisterDialogOpen, setIsUnregisterDialogOpen] = useState(false);
   const [isUserRegistered, setIsUserRegistered] = useState(false);
 
   const { sendMessage, lastMessage } = useSharedWebSocket();
@@ -32,7 +33,7 @@ const EventPage = () => {
 
   const event = events.find((e) => e.id === id);
 
-  // Если мероприятие не найдено в контексте, запрашиваем по id
+  // Получение события по id, если оно отсутствует в контексте
   useEffect(() => {
     if (!event && id) {
       sendMessage({
@@ -45,29 +46,31 @@ const EventPage = () => {
     }
   }, [event, id, sendMessage]);
 
-  // Обновляем контекст при получении мероприятия по id
+  // Обработка входящих сообщений
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== "string") return;
     try {
       const data = JSON.parse(lastMessage);
       const action = data?.message?.action;
-      const payload = data?.message?.event;
 
-      if (action === "get_event_by_id" && payload?._id === id) {
-        setEvents((prev) => [
-          ...prev,
-          {
-            ...payload,
-            id: payload._id,
-            volunteers: {
-              joined: payload.volunteers?.length || 0,
-              needed: payload.required_volunteers,
-              list: payload.volunteers || [],
+      if (action === "get_event_by_id") {
+        const payload = data?.message?.event;
+        if (payload?._id === id) {
+          setEvents((prev) => [
+            ...prev,
+            {
+              ...payload,
+              id: payload._id,
+              volunteers: {
+                joined: payload.volunteers?.length || 0,
+                needed: payload.required_volunteers,
+                list: payload.volunteers || [],
+              },
+              donations: payload.donations || { raised: 0, goal: 0 },
+              image: payload.photo_url || "https://placehold.co/600x400?text=Event",
             },
-            donations: payload.donations || { raised: 0, goal: 0 },
-            image: payload.photo_url || "https://placehold.co/600x400?text=Event",
-          },
-        ]);
+          ]);
+        }
       }
 
       if (
@@ -92,12 +95,35 @@ const EventPage = () => {
           )
         );
       }
+
+      if (
+        action === "unregister_volunteer" &&
+        data?.message?.message?.status === "success" &&
+        data.message.message.user_id === userId &&
+        data.message.message._id === id
+      ) {
+        setIsUserRegistered(false);
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === id
+              ? {
+                  ...ev,
+                  volunteers: {
+                    ...ev.volunteers,
+                    joined: Math.max(ev.volunteers.joined - 1, 0),
+                    list: (ev.volunteers.list || []).filter((uid) => uid !== userId),
+                  },
+                }
+              : ev
+          )
+        );
+      }
     } catch (err) {
       console.error("Ошибка обработки WebSocket-сообщения:", err);
     }
   }, [lastMessage, id, setEvents, userId]);
 
-  // Установка флага регистрации
+  // Проверка регистрации пользователя
   useEffect(() => {
     if (event?.volunteers?.list?.includes(userId)) {
       setIsUserRegistered(true);
@@ -139,6 +165,20 @@ const EventPage = () => {
       },
     });
     setIsVolunteerDialogOpen(false);
+  };
+
+  const handleUnregisterConfirm = () => {
+    sendMessage({
+      topic: "event_requests",
+      message: {
+        action: "unregister_volunteer",
+        data: {
+          _id: id,
+          user_id: userId,
+        },
+      },
+    });
+    setIsUnregisterDialogOpen(false);
   };
 
   const handleShare = () => {
@@ -191,26 +231,17 @@ const EventPage = () => {
           </div>
 
           <div className="charity-card flex flex-col space-y-5">
-            <Button
-              className="w-full"
-              variant={isUserRegistered ? "default" : "outline"}
-              onClick={() => {
-                if (!isUserRegistered) setIsVolunteerDialogOpen(true);
-              }}
-              disabled={isUserRegistered}
-            >
-              {isUserRegistered ? (
-                <>
-                  <CheckCheck className="h-4 w-4 mr-2" />
-                  Вы участвуете
-                </>
-              ) : (
-                <>
-                  <Users className="h-4 w-4 mr-2" />
-                  Я волонтёр
-                </>
-              )}
-            </Button>
+            {isUserRegistered ? (
+              <Button className="w-full" variant="default" onClick={() => setIsUnregisterDialogOpen(true)}>
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Вы участвуете (отменить)
+              </Button>
+            ) : (
+              <Button className="w-full" variant="outline" onClick={() => setIsVolunteerDialogOpen(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                Я волонтёр
+              </Button>
+            )}
 
             <Button className="w-full" variant="secondary" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
@@ -220,6 +251,7 @@ const EventPage = () => {
         </div>
       </div>
 
+      {/* Подтверждение регистрации */}
       <Dialog open={isVolunteerDialogOpen} onOpenChange={setIsVolunteerDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -233,6 +265,24 @@ const EventPage = () => {
               Отмена
             </Button>
             <Button onClick={handleVolunteerConfirm}>Подтвердить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Подтверждение отмены */}
+      <Dialog open={isUnregisterDialogOpen} onOpenChange={setIsUnregisterDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Отмена участия</DialogTitle>
+            <DialogDescription>
+              Вы уверены, что хотите отменить своё участие в этом мероприятии?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUnregisterDialogOpen(false)}>
+              Нет
+            </Button>
+            <Button onClick={handleUnregisterConfirm}>Да, отменить</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
