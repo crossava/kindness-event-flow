@@ -167,8 +167,20 @@ const OrganizerPanel = () => {
   };
 
   const handleDeleteEvent = () => {
-    toast.success("Мероприятие удалено!");
-    setIsDeleteConfirmationOpen(false);
+    if (!eventToDelete || !isConnected) return;
+
+    sendMessage({
+        topic: "event_requests",
+        message: {
+        action: "delete_event",
+        data: {
+            _id: eventToDelete,
+        },
+        },
+  });
+
+  // Закрываем модалку, пока результат придёт по сокету
+  setIsDeleteConfirmationOpen(false);
   };
 
   const confirmDeleteVolunteer = (volunteerId: string) => {

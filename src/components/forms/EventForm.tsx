@@ -104,16 +104,23 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
       message: {
         action: isEditing ? "update_event" : "create_event",
         data: {
-          id: event?.id || Date.now().toString(),
-          title: formData.title,
-          description: formData.description,
-          start_datetime: startDateTime,
-          location: formData.location,
-          required_volunteers: Number(formData.volunteersNeeded),
-          photo_url: formData.photo || null,
-          category: formData.category,
-          created_by: userId
-        }
+        ...(isEditing
+          ? {
+              _id: event?.id,
+              updated_by: userId
+            }
+          : {
+              id: Date.now().toString(),
+              created_by: userId
+            }),
+        title: formData.title,
+        description: formData.description,
+        start_datetime: startDateTime,
+        location: formData.location,
+        required_volunteers: Number(formData.volunteersNeeded),
+        photo_url: formData.photo || null,
+        category: formData.category
+      }
       }
     };
 
