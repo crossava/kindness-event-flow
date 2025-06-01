@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { RubleIcon } from "@/components/icons";
 
 import { useWebSocket } from "@/hooks/useWebSocket";
-const userId = "6820de8bf230d4d641f0e982"; // заменить на реальный ID после подключения авторизации
+import {authService} from "@/api/authService.ts";
+const userId = authService.getUserId();
 
 
 // Mock data for user events

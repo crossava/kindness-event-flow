@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { russianContent } from "@/lib/localization/russianContent";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import {authService} from "@/api/authService.ts";
+
 
 const IMGBB_API_KEY = "fe4ecad60723598a90505950241cdeff"; // Замените на ваш API ключ
 
@@ -43,6 +46,9 @@ interface EventFormProps {
 export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps) => {
   const { events, categories, common } = russianContent;
   const isEditing = !!event;
+  const { sendMessage, lastMessage } = useWebSocket();
+  const userId = authService.getUserId();
+
 
   const [formData, setFormData] = useState({
     title: event?.title || "",
@@ -86,22 +92,33 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
   };
 
   const handleSubmit = (isDraft: boolean = false) => {
-    if (!formData.title || !formData.description || !formData.date || !formData.location) {
+    if (!formData.title || !formData.description || !formData.date || !formData.time || !formData.location) {
       toast.error("Пожалуйста, заполните все обязательные поля");
       return;
     }
 
-    const eventData = {
-      ...formData,
-      status: isDraft ? "Draft" : "Active",
-      volunteers: {
-        needed: Number(formData.volunteersNeeded),
-        joined: event?.volunteers.joined || 0
-      },
-      id: event?.id || Date.now().toString()
+    const startDateTime = `${formData.date}T${formData.time}`;
+
+    const socketMessage = {
+      topic: "event_requests",
+      message: {
+        action: isEditing ? "update_event" : "create_event",
+        data: {
+          id: event?.id || Date.now().toString(),
+          title: formData.title,
+          description: formData.description,
+          start_datetime: startDateTime,
+          location: formData.location,
+          required_volunteers: Number(formData.volunteersNeeded),
+          photo_url: formData.photo || null,
+          category: formData.category,
+          created_by: userId
+        }
+      }
     };
 
-    onSave(eventData);
+    sendMessage(socketMessage);
+    onSave(socketMessage.message.data);
     onOpenChange(false);
     toast.success(isEditing ? "Мероприятие обновлено" : "Мероприятие создано");
   };

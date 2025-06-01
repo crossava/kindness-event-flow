@@ -145,7 +145,7 @@ export const authService = {
 
     try {
       socket.send(JSON.stringify(message));
-      resolve(); // Если не требуется подтверждение от сервера
+      resolve();
     } catch (error) {
       reject(error);
     }
