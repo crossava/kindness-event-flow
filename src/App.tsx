@@ -16,6 +16,7 @@ const queryClient = new QueryClient();
 import { WebSocketProvider } from "@/hooks/WebSocketProvider.tsx";
 import { UserProvider } from "@/context/UserContext";
 import React from "react";
+import {EventProvider} from "@/context/EventContext.tsx";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,6 +25,7 @@ const App = () => (
       <WebSocketProvider> {/* ✅ оборачиваем всё */}
         <Toaster />
         <Sonner />
+        <EventProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
@@ -35,6 +37,7 @@ const App = () => (
             </Route>
           </Routes>
         </BrowserRouter>
+        </EventProvider>
       </WebSocketProvider>
       </UserProvider>
     </TooltipProvider>

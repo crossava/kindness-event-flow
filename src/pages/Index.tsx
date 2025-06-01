@@ -1,16 +1,17 @@
-﻿import { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import { StatsOverview } from "@/components/stats/StatsOverview";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
+import { useEventContext } from "@/context/EventContext";
 
 const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [events, setEvents] = useState<any[]>([]);
 
+  const { events, setEvents } = useEventContext();
   const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
 
   const fetchEvents = (category: string) => {
@@ -35,27 +36,26 @@ const HomePage = () => {
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== "string") return;
     try {
-      if (!lastMessage.trim().startsWith("{")) return;
-
       const data = JSON.parse(lastMessage);
       const action = data?.message?.action;
       const payload = data?.message?.message;
 
       if (action === "get_upcoming_events" && payload?.status === "success") {
         const transformed = (payload.events || []).map((e: any) => ({
-          ...e,
-          id: e._id,
-          volunteers: {
-            joined: e.volunteers?.length || 0,
-            needed: e.required_volunteers,
-          },
-          donations: {
-            raised: e.donations?.raised || 0,
-            goal: e.donations?.goal || 0,
-          },
-          image: e.photo_url || "https://placehold.co/600x400?text=Event",
-          date: e.start_datetime?.split("T")[0] || "",
-        }));
+        ...e,
+        id: e._id,
+        volunteers: {
+          joined: e.volunteers?.length || 0,
+          needed: e.required_volunteers,
+          list: e.volunteers || [], // добавлен список user_id
+        },
+        donations: {
+          raised: e.donations?.raised || 0,
+          goal: e.donations?.goal || 0,
+        },
+        image: e.photo_url || "https://placehold.co/600x400?text=Event",
+      }));
+
         setEvents(transformed);
       }
     } catch (err) {
@@ -64,11 +64,12 @@ const HomePage = () => {
   }, [lastMessage]);
 
   const filteredEvents = events.filter((event) => {
-    const matchesSearch =
+    const query = searchQuery.toLowerCase();
+    return (
       !searchQuery ||
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+      event.title.toLowerCase().includes(query) ||
+      event.description.toLowerCase().includes(query)
+    );
   });
 
   const totalEvents = events.length;
@@ -83,20 +84,15 @@ const HomePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <section className="mb-12">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h1 className="text-4xl font-heading font-bold mb-4">
-            Измените жизнь к лучшему сегодня
-          </h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Занимайтесь значимыми делами, занимайтесь волонтерством и жертвуйте
-            на создание позитивных изменений в сообществах по всей стране!
-          </p>
-          <Button asChild size="lg">
-            <Link to="/organizer">Создать мероприятие</Link>
-          </Button>
-        </div>
-
+      <section className="mb-12 text-center max-w-3xl mx-auto">
+        <h1 className="text-4xl font-bold mb-4">Измените жизнь к лучшему сегодня</h1>
+        <p className="text-lg text-muted-foreground mb-8">
+          Занимайтесь значимыми делами, занимайтесь волонтерством и жертвуйте
+          на создание позитивных изменений в сообществах по всей стране!
+        </p>
+        <Button asChild size="lg">
+          <Link to="/organizer">Создать мероприятие</Link>
+        </Button>
         <StatsOverview
           totalEvents={totalEvents}
           totalVolunteers={totalVolunteers}
@@ -106,7 +102,7 @@ const HomePage = () => {
       </section>
 
       <section>
-        <h2 className="text-2xl font-heading font-semibold mb-6">
+        <h2 className="text-2xl font-semibold mb-6">
           Предстоящие благотворительные мероприятия
         </h2>
 
