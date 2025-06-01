@@ -1,25 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar, ChevronDown, Plus, Search, Users } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { authService } from "@/api/authService";
+import { Calendar, ChevronDown, Plus, Users } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
@@ -28,7 +35,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 import {
   Select,
@@ -42,9 +49,8 @@ import { EventForm } from "@/components/forms/EventForm";
 import { VolunteerManagementForm } from "@/components/forms/VolunteerManagementForm";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
-const volunteersData = [
-  // можно заменить на реальные данные, если нужно
-];
+import { authService } from "@/api/authService";
+import { useUserContext } from "@/context/UserContext";
 
 const OrganizerPanel = () => {
   const { common, events, categories } = russianContent;
@@ -62,51 +68,73 @@ const OrganizerPanel = () => {
   const [isVolunteerDeleteConfirmOpen, setIsVolunteerDeleteConfirmOpen] = useState(false);
   const [volunteerToDelete, setVolunteerToDelete] = useState<string | null>(null);
 
+  const didRequestRef = useRef(false);
   const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
   const userId = authService.getUserId();
+  const { users, setUsers } = useUserContext();
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && !didRequestRef.current) {
       sendMessage({
         topic: "event_requests",
         message: {
           action: "get_user_events",
-          data: {
-            user_id: userId,
-          },
+          data: { user_id: userId },
         },
       });
+
+      sendMessage({
+        topic: "user_requests",
+        message: {
+          action: "get_all_users",
+          data: {},
+        },
+      });
+
+      didRequestRef.current = true;
     }
   }, [isConnected, sendMessage]);
 
   useEffect(() => {
   if (!lastMessage || typeof lastMessage !== "string") return;
-
   try {
     if (!lastMessage.trim().startsWith("{")) return;
-
     const data = JSON.parse(lastMessage);
+
     const action = data?.message?.action;
     const payload = data?.message?.message;
 
-    console.log("action: ", action);
-    console.log("status: ", payload?.status);
-
+    // ✅ 1. Обработка get_user_events
     if (action === "get_user_events" && payload?.status === "success") {
-      console.log("✅ checked");
-      const events = (payload.created_events || []).map((e: any) => ({
+      const events = payload.created_events.map((e: any) => ({
         ...e,
         id: e._id,
+        volunteers: {
+          ids: e.volunteers || [],
+          joined: e.volunteers?.length || 0,
+          needed: e.required_volunteers,
+        },
       }));
       setOrganizerEvents(events);
     }
 
+    // ✅ 2. Обработка get_all_users (action нет, но есть status и users)
+    if (data?.message?.status === "success" && Array.isArray(data?.message?.users)) {
+      const usersList = data.message.users.map((u: any) => ({
+        ...u,
+        id: u._id,
+      }));
+      setUsers(usersList);
+    }
+
+    // ✅ 3. Создание нового мероприятия
     if (action === "create_event" && payload?.status === "success") {
       const raw = payload.event;
       const newEvent = {
         ...raw,
         id: raw._id,
         volunteers: {
+          ids: raw.volunteers || [],
           joined: raw.volunteers?.length || 0,
           needed: raw.required_volunteers,
         },
@@ -114,8 +142,17 @@ const OrganizerPanel = () => {
       setOrganizerEvents((prev) => [...prev, newEvent]);
     }
 
+    // ✅ 4. Обновление мероприятия
     if (action === "update_event" && payload?.status === "success") {
-      const updated = { ...payload.event, id: payload.event._id };
+      const updated = {
+        ...payload.event,
+        id: payload.event._id,
+        volunteers: {
+          ids: payload.event.volunteers || [],
+          joined: payload.event.volunteers?.length || 0,
+          needed: payload.event.required_volunteers,
+        },
+      };
       setOrganizerEvents((prev) =>
         prev.map((e) => (e.id === updated.id ? updated : e))
       );
@@ -127,74 +164,54 @@ const OrganizerPanel = () => {
 }, [lastMessage]);
 
 
-
   const filteredEvents = organizerEvents.filter((event) => {
     const matchesStatus = statusFilter === "all" || event.status.toLowerCase() === statusFilter.toLowerCase();
     const matchesSearch = !searchQuery ||
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase());
-
     return matchesStatus && matchesSearch;
   });
 
-  const handleCreateEvent = () => {
-    setIsCreateEventDialogOpen(false); // просто закрываем, данные придут из сокета
-  };
-
   const handleEditEvent = (eventId: string) => {
-    const event = organizerEvents.find(e => e.id === eventId);
+    const event = organizerEvents.find((e) => e.id === eventId);
     if (event) {
       setCurrentEvent(event);
       setIsEditEventDialogOpen(true);
     }
   };
 
-  const handleSaveEvent = () => {
-    setIsEditEventDialogOpen(false); // обновление придет по сокету
-  };
-
   const handleManageVolunteers = (eventId: string) => {
-    const event = organizerEvents.find(e => e.id === eventId);
+    const event = organizerEvents.find((e) => e.id === eventId);
     if (event) {
       setCurrentEventForVolunteers(event);
       setIsVolunteerManagementOpen(true);
     }
   };
 
-  const confirmDeleteEvent = (eventId: string) => {
-    setEventToDelete(eventId);
-    setIsDeleteConfirmationOpen(true);
-  };
-
   const handleDeleteEvent = () => {
     if (!eventToDelete || !isConnected) return;
 
     sendMessage({
-        topic: "event_requests",
-        message: {
+      topic: "event_requests",
+      message: {
         action: "delete_event",
-        data: {
-            _id: eventToDelete,
-        },
-        },
-  });
+        data: { _id: eventToDelete },
+      },
+    });
 
-  // Закрываем модалку, пока результат придёт по сокету
-  setIsDeleteConfirmationOpen(false);
-  };
-
-  const confirmDeleteVolunteer = (volunteerId: string) => {
-    setVolunteerToDelete(volunteerId);
-    setIsVolunteerDeleteConfirmOpen(true);
+    setIsDeleteConfirmationOpen(false);
   };
 
   const handleDeleteVolunteer = () => {
-    toast.success("Волонтер удален!");
+    toast.success("Волонтер удалён!");
     setIsVolunteerDeleteConfirmOpen(false);
   };
 
   const totalEvents = organizerEvents.length;
-  const totalVolunteers = organizerEvents.reduce((sum, event) => sum + (event.volunteers?.joined || 0), 0);
+  const totalVolunteers = organizerEvents.reduce(
+    (sum, event) => sum + (event.volunteers?.joined || 0),
+    0
+  );
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -278,7 +295,9 @@ const OrganizerPanel = () => {
                       <TableCell>{event.title}</TableCell>
                       <TableCell>{new Date(event.start_datetime).toLocaleDateString("ru-RU")}</TableCell>
                       <TableCell>{categories[event.category] || event.category}</TableCell>
-                      <TableCell>{event.volunteers?.joined || 0}/{event.required_volunteers}</TableCell>
+                      <TableCell>
+                        {event.volunteers?.joined || 0}/{event.volunteers?.needed}
+                      </TableCell>
                       <TableCell>{event.status}</TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -294,7 +313,10 @@ const OrganizerPanel = () => {
                             <DropdownMenuItem onClick={() => handleManageVolunteers(event.id)}>
                               {events.manageVolunteers}
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => confirmDeleteEvent(event.id)}>
+                            <DropdownMenuItem className="text-destructive" onClick={() => {
+                              setEventToDelete(event.id);
+                              setIsDeleteConfirmationOpen(true);
+                            }}>
                               {common.delete}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -314,7 +336,7 @@ const OrganizerPanel = () => {
               <CardTitle>{common.volunteers}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Здесь будет список волонтеров (можно подключить по аналогии).</p>
+              <p>Здесь будет список волонтёров — подключено из контекста.</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -323,7 +345,7 @@ const OrganizerPanel = () => {
       <EventForm
         open={isCreateEventDialogOpen}
         onOpenChange={setIsCreateEventDialogOpen}
-        onSave={handleCreateEvent}
+        onSave={() => setIsCreateEventDialogOpen(false)}
       />
 
       {currentEvent && (
@@ -331,7 +353,7 @@ const OrganizerPanel = () => {
           open={isEditEventDialogOpen}
           onOpenChange={setIsEditEventDialogOpen}
           event={currentEvent}
-          onSave={handleSaveEvent}
+          onSave={() => setIsEditEventDialogOpen(false)}
         />
       )}
 
@@ -340,7 +362,9 @@ const OrganizerPanel = () => {
           open={isVolunteerManagementOpen}
           onOpenChange={setIsVolunteerManagementOpen}
           eventTitle={currentEventForVolunteers.title}
-          volunteers={volunteersData.filter(v => v.event === currentEventForVolunteers.title)}
+          volunteers={users.filter((u) =>
+            currentEventForVolunteers.volunteers?.ids.includes(u.id)
+          )}
         />
       )}
 

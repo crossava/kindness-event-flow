@@ -13,12 +13,11 @@ import { TaskAssignmentForm } from "./TaskAssignmentForm";
 import { MessageForm } from "./MessageForm";
 
 interface Volunteer {
-  id: string;
-  name: string;
+  _id: string;
+  full_name: string;
   email: string;
-  phone: string;
+  created_at: string;
   event: string;
-  joinDate: string;
 }
 
 interface VolunteerManagementFormProps {
@@ -43,12 +42,12 @@ export const VolunteerManagementForm = ({
 
   const filteredVolunteers = volunteers.filter(
     (volunteer) =>
-      volunteer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      volunteer.email.toLowerCase().includes(searchQuery.toLowerCase())
+      volunteer.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      volunteer.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleAssignTask = (volunteerId: string) => {
-    const volunteer = volunteers.find((v) => v.id === volunteerId);
+    const volunteer = volunteers.find((v) => v._id === volunteerId);
     if (volunteer) {
       setSelectedVolunteer(volunteer);
       setIsAssignTaskOpen(true);
@@ -56,7 +55,7 @@ export const VolunteerManagementForm = ({
   };
 
   const handleContact = (volunteerId: string) => {
-    const volunteer = volunteers.find((v) => v.id === volunteerId);
+    const volunteer = volunteers.find((v) => v._id === volunteerId);
     if (volunteer) {
       setSelectedVolunteer(volunteer);
       setIsMessageOpen(true);
@@ -64,12 +63,12 @@ export const VolunteerManagementForm = ({
   };
 
   const handleTaskAssigned = () => {
-    toast.success(`Задача назначена для ${selectedVolunteer?.name}`);
+    toast.success(`Задача назначена для ${selectedVolunteer?.full_name}`);
     setIsAssignTaskOpen(false);
   };
 
   const handleMessageSent = () => {
-    toast.success(`Сообщение отправлено ${selectedVolunteer?.name}`);
+    toast.success(`Сообщение отправлено ${selectedVolunteer?.full_name}`);
     setIsMessageOpen(false);
   };
 
@@ -115,26 +114,24 @@ export const VolunteerManagementForm = ({
                     <TableRow>
                       <TableHead>{vol.name}</TableHead>
                       <TableHead>{vol.email}</TableHead>
-                      <TableHead>{vol.phone}</TableHead>
                       <TableHead>{vol.joinDate}</TableHead>
                       <TableHead>{common.actions}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredVolunteers.map((volunteer) => (
-                      <TableRow key={volunteer.id}>
-                        <TableCell className="font-medium">{volunteer.name}</TableCell>
+                      <TableRow key={volunteer._id}>
+                        <TableCell className="font-medium">{volunteer.full_name}</TableCell>
                         <TableCell>{volunteer.email}</TableCell>
-                        <TableCell>{volunteer.phone}</TableCell>
                         <TableCell>
-                          {new Date(volunteer.joinDate).toLocaleDateString("ru-RU")}
+                          {new Date(volunteer.created_at).toLocaleDateString("ru-RU")}
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleContact(volunteer.id)}
+                              onClick={() => handleContact(volunteer._id)}
                             >
                               <MessageSquare className="h-4 w-4 mr-1" />
                               {common.contact}
@@ -142,7 +139,7 @@ export const VolunteerManagementForm = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleAssignTask(volunteer.id)}
+                              onClick={() => handleAssignTask(volunteer._id)}
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               {common.assign}

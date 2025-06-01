@@ -14,11 +14,13 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 import { WebSocketProvider } from "@/hooks/WebSocketProvider.tsx";
+import { UserProvider } from "@/context/UserContext";
 import React from "react";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <UserProvider>
       <WebSocketProvider> {/* ✅ оборачиваем всё */}
         <Toaster />
         <Sonner />
@@ -34,6 +36,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </WebSocketProvider>
+      </UserProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
