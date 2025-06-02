@@ -1,28 +1,46 @@
-﻿// api/authService.ts
-import { useWebSocket } from "@/hooks/useWebSocket";
+﻿// src/api/authService.ts
 import { SERVER_IP, WEBSOCKET_IP } from '../hooks/DevelopmentConfig';
 
 const API_BASE_URL = SERVER_IP;
 const WS_URL = WEBSOCKET_IP;
 
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+  role?: string;
+  created_at?: string;
+}
+
 export const authService = {
-  // Сохраняем токен в localStorage
+  // ====== TOKEN ======
   setToken: (token: string) => {
     localStorage.setItem("token", token);
   },
 
-  // Получаем токен из localStorage
   getToken: (): string | null => {
     return localStorage.getItem("token");
   },
 
-  // Удаляем токен
   removeToken: () => {
     localStorage.removeItem("token");
   },
 
-  // Вход в систему
-  login: async (email: string, password: string) => {
+  // ====== USER ID ======
+  setUserId: (userId: string) => {
+    localStorage.setItem("user_id", userId);
+  },
+
+  getUserId: (): string | null => {
+    return localStorage.getItem("user_id");
+  },
+
+  removeUserId: () => {
+    localStorage.removeItem("user_id");
+  },
+
+  // ====== LOGIN ======
+  login: async (email: string, password: string): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/login`, {
       method: "POST",
       headers: {
@@ -36,31 +54,33 @@ export const authService = {
     }
 
     const data = await response.json();
+    const token = data.message.body.access_token;
     const userId = data.message?.body?.user_id;
-    if (userId) {
-        authService.setUserId(userId);
-    }
 
-    return data.token;
+    console.log("data post auth", data);
+
+    if (token) authService.setToken(token);
+    if (userId) authService.setUserId(userId);
+
+    return token;
   },
 
-    // Сохраняем user_id
-    setUserId: (userId: string) => {
-        localStorage.setItem("user_id", userId);
-    },
+  // ====== LOGOUT ======
+  logout: (socket: WebSocket | null) => {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.close();
+    }
+    authService.removeToken();
+    authService.removeUserId();
+  },
 
-    // Получаем user_id
-    getUserId: (): string | null => {
-        return localStorage.getItem("user_id");
-    },
-
-    // Удаляем user_id
-    removeUserId: () => {
-        localStorage.removeItem("user_id");
-    },
-
-  // Регистрация
-  register: async (email: string, password: string, fullName: string, role: string) => {
+  // ====== REGISTER ======
+  register: async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: string
+  ) => {
     const response = await fetch(`${API_BASE_URL}/register`, {
       method: "POST",
       headers: {
@@ -70,7 +90,7 @@ export const authService = {
         email,
         full_name: fullName,
         password,
-        role
+        role,
       }),
     });
 
@@ -82,31 +102,16 @@ export const authService = {
     return await response.json();
   },
 
-  // Инициализация WebSocket соединения
-  initWebSocket: (token: string | null) => {
-    if (!token) return null;
-    return useWebSocket(WS_URL, token);
-  },
-
-  // Выход из системы
-  logout: (socket: WebSocket | null) => {
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.close();
-    }
-    authService.removeToken();
-    authService.removeUserId();
-  },
-
-  // Подтверждение регистрации
+  // ====== CONFIRM REGISTRATION ======
   confirmRegistration: async (email: string, confirmationCode: string) => {
     const response = await fetch(`${API_BASE_URL}/confirm-registration`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ 
-        email, 
-        confirmation_code: confirmationCode 
+      body: JSON.stringify({
+        email,
+        confirmation_code: confirmationCode,
       }),
     });
 
@@ -118,37 +123,69 @@ export const authService = {
     return await response.json();
   },
 
-  // Создание нового мероприятия
-  createEvent: async (eventData: {
-    title: string;
-    description: string;
-    start_datetime: string;
-    location: string;
-    required_volunteers: number;
-    category: string;
-    created_by: string;
-    photo_url: string;
-  }, socket: WebSocket | null) => {
-    
+  // ====== GET CURRENT USER ======
+  getCurrentUser: async (): Promise<User | null> => {
+    const token = authService.getToken();
+    const userId = authService.getUserId();
+
+    if (!token || !userId) return null;
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.warn("Не удалось загрузить пользователя");
+      return null;
+    }
+
+    return await response.json();
+  },
+
+  // ====== INIT WEBSOCKET ======
+  initWebSocket: (token: string | null): WebSocket | null => {
+    if (!token) return null;
+    const ws = new WebSocket(`${WS_URL}?token=${token}`);
+    return ws;
+  },
+
+  // ====== CREATE EVENT (через WebSocket) ======
+  createEvent: async (
+    eventData: {
+      title: string;
+      description: string;
+      start_datetime: string;
+      location: string;
+      required_volunteers: number;
+      category: string;
+      created_by: string;
+      photo_url: string;
+    },
+    socket: WebSocket | null
+  ): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return reject(new Error("WebSocket не подключён"));
-    }
-
-    const message = {
-      topic: "event_requests",
-      message: {
-        action: "create_event",
-        data: eventData
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        return reject(new Error("WebSocket не подключён"));
       }
-    };
 
-    try {
-      socket.send(JSON.stringify(message));
-      resolve();
-    } catch (error) {
-      reject(error);
-    }
-     });
+      const message = {
+        topic: "event_requests",
+        message: {
+          action: "create_event",
+          data: eventData,
+        },
+      };
+
+      try {
+        socket.send(JSON.stringify(message));
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
   },
 };

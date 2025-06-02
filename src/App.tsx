@@ -1,9 +1,8 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// src/App.tsx
+import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { Layout } from "./components/layout/Layout";
 import HomePage from "./pages/Index";
 import EventPage from "./pages/EventPage";
@@ -11,38 +10,68 @@ import Dashboard from "./pages/Dashboard";
 import OrganizerPanel from "./pages/OrganizerPanel";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-import { WebSocketProvider } from "@/hooks/WebSocketProvider.tsx";
-import { UserProvider } from "@/context/UserContext";
-import React from "react";
-import {EventProvider} from "@/context/EventContext.tsx";
+import { WebSocketProvider } from "@/hooks/WebSocketProvider";
+import { UserProvider, useUserContext } from "@/context/UserContext";
+import { EventProvider } from "@/context/EventContext";
+import PrivateRoute from "@/components/PrivateRoute.tsx";
+
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <UserProvider>
-      <WebSocketProvider> {/* ✅ оборачиваем всё */}
-        <Toaster />
-        <Sonner />
-        <EventProvider>
+        <AppWithUserContext />
+      </UserProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+const AppWithUserContext = () => {
+  const { isLoading } = useUserContext();
+
+  if (isLoading) {
+    return <div>Загрузка...</div>;
+  }
+
+  return (
+    <WebSocketProvider>
+      <Sonner />
+      <Toaster />
+      <EventProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="event/:id" element={<EventPage />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="organizer" element={<OrganizerPanel />} />
+              <Route
+                path="dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="organizer"
+                element={
+                  <PrivateRoute>
+                    <OrganizerPanel />
+                  </PrivateRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>
-        </EventProvider>
-      </WebSocketProvider>
-      </UserProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </EventProvider>
+    </WebSocketProvider>
+  );
+};
 
 
 export default App;

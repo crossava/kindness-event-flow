@@ -14,34 +14,7 @@ import { RubleIcon } from "@/components/icons";
 
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {authService} from "@/api/authService.ts";
-const userId = authService.getUserId();
-
-
-// Mock data for user events
-const userEvents = [
-  {
-    id: "1",
-    title: "День чистого пляжа",
-    description: "Присоединяйтесь к нам и проведите день уборки пляжа, чтобы защитить морских обитателей и создать более чистую окружающую среду для всех.",
-    date: "2025-05-15",
-    location: "Сочи, Имеретинский пляж",
-    category: "Окружающая среда",
-    volunteers: { needed: 50, joined: 32 },
-    donations: { goal: 2000, raised: 1250 },
-    image: "https://live.staticflickr.com/65535/48453652346_0a7c12f9ec_b.jpg",
-  },
-  {
-    id: "3",
-    title: "Общественная ярмарка здоровья",
-    description: "Бесплатные медицинские обследования, образование и ресурсы для малообеспеченных слоев населения.",
-    date: "2025-06-05",
-    location: "ЦПКиО Маяковского, Екатеринбург",
-    category: "Здоровье",
-    volunteers: { needed: 40, joined: 25 },
-    donations: { goal: 7500, raised: 4000 },
-    image: "https://esd.adventist.org/wp-content/uploads/2017/06/IMG_2084-15-06-17-21-48.jpg",
-  },
-];
+import { useUserContext } from "@/context/UserContext";
 
 // Mock user profile data
 const userProfile = {
@@ -54,6 +27,7 @@ const userProfile = {
 
 const Dashboard = () => {
   useWebSocket(); // инициализируем WebSocket-подключение
+  const { currentUser } = useUserContext();
 
   const [activeTab, setActiveTab] = useState("events");
   const [isEditing, setIsEditing] = useState(false);
@@ -75,7 +49,7 @@ const Dashboard = () => {
         message: {
           action: "get_user_events",
           data: {
-            user_id: userId,
+            user_id: currentUser.id,
           },
         },
       });

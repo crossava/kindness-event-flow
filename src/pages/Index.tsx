@@ -73,10 +73,11 @@ const HomePage = () => {
   });
 
   const totalEvents = events.length;
-  const totalVolunteers = events.reduce(
-    (sum, event) => sum + event.volunteers.joined,
-    0
+  const uniqueVolunteerIds = new Set(
+    events.flatMap((event) => event.volunteers.list || [])
   );
+  const totalVolunteers = uniqueVolunteerIds.size;
+
   const totalDonations = events.reduce(
     (sum, event) => sum + event.donations.raised,
     0
