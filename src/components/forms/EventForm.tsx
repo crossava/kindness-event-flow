@@ -53,12 +53,13 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
   const [formData, setFormData] = useState({
     title: event?.title || "",
     description: event?.description || "",
-    date: event?.date || "",
-    time: "",
+    date: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 10) : "", // "YYYY-MM-DD"
+    time: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(11, 16) : "", // "HH:MM"
     location: event?.location || "",
     category: event?.category || "",
     volunteersNeeded: event?.volunteers.needed || 0,
-    photo: event?.photo || ""
+    photo: event?.photo || "",
+    status: event?.status || "draft"
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -229,7 +230,23 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
                 onChange={(e) => handleChange("volunteersNeeded", e.target.value)}
               />
             </div>
-
+            <div className="space-y-2">
+                <Label htmlFor="status">Статус</Label>
+                <Select
+                    value={formData.status}
+                    onValueChange={(value) => handleChange("status", value)}
+                  >
+                    <SelectTrigger id="status">
+                        <SelectValue placeholder="Выберите статус" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="draft">Черновик</SelectItem>
+                        <SelectItem value="active">Активно</SelectItem>
+                        <SelectItem value="completed">Завершено</SelectItem>
+                        <SelectItem value="cancelled">Отменено</SelectItem>
+                    </SelectContent>
+                </Select>
+             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="photo">{events.photo}</Label>
               <Input

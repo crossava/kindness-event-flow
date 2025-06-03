@@ -28,7 +28,7 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
     setError(null);
 
     try {
-      await authService.register(email, password, fullName, role);
+      await authService.register(email, password, fullName, role, phone);
       setShowConfirmation(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка регистрации");
@@ -45,6 +45,8 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
   const handleBackToRegister = () => {
     setShowConfirmation(false);
   };
+
+  const [phone, setPhone] = useState("");
 
   return (
     <>
@@ -66,16 +68,27 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
               />
             </div>
             <div>
-            <Label htmlFor="fullName">Полное имя</Label>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="Иван Иванов"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-          </div>
+                <Label htmlFor="fullName">Полное имя</Label>
+                <Input
+                id="fullName"
+                type="text"
+                placeholder="Иван Иванов"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                />
+            </div>
+            <div>
+                <Label htmlFor="phone">Телефон</Label>
+                <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+7 900 123-45-67"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                />
+            </div>
             <div>
               <Label htmlFor="password">Пароль</Label>
               <Input

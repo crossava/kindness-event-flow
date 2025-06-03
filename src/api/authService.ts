@@ -79,7 +79,8 @@ export const authService = {
     email: string,
     password: string,
     fullName: string,
-    role: string
+    role: string,
+    phone: string
   ) => {
     const response = await fetch(`${API_BASE_URL}/register`, {
       method: "POST",
@@ -91,6 +92,7 @@ export const authService = {
         full_name: fullName,
         password,
         role,
+        phone,
       }),
     });
 
