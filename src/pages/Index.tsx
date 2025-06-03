@@ -6,6 +6,7 @@ import { EventFilters } from "@/components/events/EventFilters";
 import { StatsOverview } from "@/components/stats/StatsOverview";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import { useEventContext } from "@/context/EventContext";
+import { russianContent } from "@/lib/localization/russianContent";
 
 const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -44,6 +45,8 @@ const HomePage = () => {
         const transformed = (payload.events || []).map((e: any) => ({
         ...e,
         id: e._id,
+        date: e.start_datetime,
+        category: russianContent.categories[e.category] || e.category,
         volunteers: {
           joined: e.volunteers?.length || 0,
           needed: e.required_volunteers,
