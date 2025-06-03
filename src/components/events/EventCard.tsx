@@ -8,7 +8,7 @@ interface EventCardProps {
   id: string;
   title: string;
   description: string;
-  date: string;
+  start_datetime: string;
   location: string;
   category: string;
   volunteers: {
@@ -26,7 +26,7 @@ export const EventCard = ({
   id,
   title,
   description,
-  date,
+  start_datetime,
   location,
   category,
   volunteers,
@@ -34,7 +34,7 @@ export const EventCard = ({
   image,
 }: EventCardProps) => {
   const donationProgress = (donations.raised / donations.goal) * 100;
-  const formattedDate = new Date(date).toLocaleDateString("ru-RU", {
+  const formattedDate = new Date(start_datetime).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",
     year: "numeric",
