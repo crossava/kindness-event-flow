@@ -61,11 +61,11 @@ export const Navbar = () => {
             Панель управления
           </Link>
 
-          <Button asChild>
-            <Link to="/organizer" onClick={(e) => handleProtectedClick(e, "/organizer")}>
-              Создать мероприятие
-            </Link>
-          </Button>
+          {/*<Button asChild>*/}
+          {/*  <Link to="/organizer" onClick={(e) => handleProtectedClick(e, "/organizer")}>*/}
+          {/*    Создать мероприятие*/}
+          {/*  </Link>*/}
+          {/*</Button>*/}
 
           {isAuthenticated ? (
             <Button variant="ghost" onClick={handleLogout}>
@@ -119,10 +119,6 @@ export const Navbar = () => {
           >
             Панель управления
           </Link>
-
-          <Button asChild className="w-full" onClick={(e) => handleProtectedClick(e, "/organizer")}>
-            <Link to="/organizer">Создать мероприятие</Link>
-          </Button>
 
           {isAuthenticated ? (
             <Button variant="ghost" className="justify-start" onClick={handleLogout}>

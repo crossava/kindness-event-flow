@@ -32,6 +32,12 @@ export const russianContent = {
     profileInfo: "Информация профиля",
     dashboard: "Панель управления",
   },
+  statusTranslations: {
+    draft: "Черновик",
+    active: "Активно",
+    completed: "Завершено",
+    cancelled: "Отменено"
+  },
   events: {
     createEvent: "Создать мероприятие",
     eventTitle: "Название мероприятия",

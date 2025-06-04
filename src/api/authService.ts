@@ -126,26 +126,27 @@ export const authService = {
   },
 
   // ====== GET CURRENT USER ======
-  getCurrentUser: async (): Promise<User | null> => {
+  getCurrentUser: (): User | null => {
     const token = authService.getToken();
     const userId = authService.getUserId();
 
     if (!token || !userId) return null;
 
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      const payload = JSON.parse(
+        atob(token.split('.')[1])
+      ) as { sub: string; full_name?: string; role?: string; exp: number };
 
-    if (!response.ok) {
-      console.warn("Не удалось загрузить пользователя");
+      return {
+        id: userId,
+        email: payload.sub,
+        full_name: payload.full_name,
+        role: payload.role,
+      };
+    } catch (error) {
+      console.error("Ошибка при разборе токена:", error);
       return null;
     }
-
-    return await response.json();
   },
 
   // ====== INIT WEBSOCKET ======

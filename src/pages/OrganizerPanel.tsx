@@ -308,7 +308,7 @@ const OrganizerPanel = () => {
                     <TableCell>
                       {event.volunteers?.joined || 0}/{event.volunteers?.needed}
                     </TableCell>
-                    <TableCell>{event.status}</TableCell>
+                   <TableCell>{russianContent.statusTranslations?.[event.status] || event.status}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

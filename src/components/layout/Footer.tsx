@@ -22,7 +22,7 @@ export const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/" className="text-sm text-muted-foreground hover:text-charity-primary">Главная</Link></li>
               <li><Link to="/dashboard" className="text-sm text-muted-foreground hover:text-charity-primary">Дашборд</Link></li>
-              <li><Link to="/organizer" className="text-sm text-muted-foreground hover:text-charity-primary">Панель управления</Link></li>
+              {/*<li><Link to="/organizer" className="text-sm text-muted-foreground hover:text-charity-primary">Панель управления</Link></li>*/}
             </ul>
           </div>
           

@@ -28,6 +28,20 @@ const HomePage = () => {
     });
   };
 
+  const searchEvents = (query: string) => {
+    setSearchQuery(query);
+    setSelectedCategory("all");
+    sendMessage({
+      topic: "event_requests",
+      message: {
+        action: "get_event_by_title",
+        data: {
+          title: query,
+        },
+      },
+    });
+  };
+
   useEffect(() => {
     if (isConnected) {
       fetchEvents(selectedCategory);
@@ -41,23 +55,24 @@ const HomePage = () => {
       const action = data?.message?.action;
       const payload = data?.message?.message;
 
-      if (action === "get_upcoming_events" && payload?.status === "success") {
+      if ((action === "get_upcoming_events" || action === "get_event_by_title") && payload?.status === "success") {
         const transformed = (payload.events || []).map((e: any) => ({
-        ...e,
-        id: e._id,
-        date: e.start_datetime,
-        category: russianContent.categories[e.category] || e.category,
-        volunteers: {
-          joined: e.volunteers?.length || 0,
-          needed: e.required_volunteers,
-          list: e.volunteers || [], // добавлен список user_id
-        },
-        donations: {
-          raised: e.donations?.raised || 0,
-          goal: e.donations?.goal || 0,
-        },
-        image: e.photo_url || "https://placehold.co/600x400?text=Event",
-      }));
+          ...e,
+          id: e._id,
+          date: e.start_datetime,
+          category: russianContent.categories[e.category] || e.category,
+          status: russianContent.statuses?.[e.status] || e.status,
+          volunteers: {
+            joined: e.volunteers?.length || 0,
+            needed: e.required_volunteers,
+            list: e.volunteers || [],
+          },
+          donations: {
+            raised: e.donations?.raised || 0,
+            goal: e.donations?.goal || 0,
+          },
+          image: e.photo_url || "https://placehold.co/600x400?text=Event",
+        }));
 
         setEvents(transformed);
       }
@@ -94,9 +109,7 @@ const HomePage = () => {
           Занимайтесь значимыми делами, занимайтесь волонтерством и жертвуйте
           на создание позитивных изменений в сообществах по всей стране!
         </p>
-        <Button asChild size="lg">
-          <Link to="/organizer">Создать мероприятие</Link>
-        </Button>
+
         <StatsOverview
           totalEvents={totalEvents}
           totalVolunteers={totalVolunteers}
@@ -115,7 +128,7 @@ const HomePage = () => {
             setSelectedCategory(value);
             fetchEvents(value);
           }}
-          onSearch={setSearchQuery}
+          onSearch={searchEvents}
           selectedCategory={selectedCategory}
         />
 

@@ -21,8 +21,7 @@ import {
 import { toast } from "sonner";
 import { russianContent } from "@/lib/localization/russianContent";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
-import {authService} from "@/api/authService.ts";
-
+import { authService } from "@/api/authService.ts";
 
 const IMGBB_API_KEY = "fe4ecad60723598a90505950241cdeff"; // Замените на ваш API ключ
 
@@ -38,7 +37,8 @@ interface EventFormProps {
     category: string;
     volunteers: { needed: number; joined: number };
     status: string;
-    photo?: string;
+    photo_url?: string;
+    start_datetime?: string;
   };
   onSave: (eventData: any) => void;
 }
@@ -46,19 +46,18 @@ interface EventFormProps {
 export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps) => {
   const { events, categories, common } = russianContent;
   const isEditing = !!event;
-  const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
+  const { sendMessage } = useSharedWebSocket();
   const userId = authService.getUserId();
-
 
   const [formData, setFormData] = useState({
     title: event?.title || "",
     description: event?.description || "",
-    date: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 10) : "", // "YYYY-MM-DD"
-    time: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(11, 16) : "", // "HH:MM"
+    date: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 10) : "",
+    time: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(11, 16) : "",
     location: event?.location || "",
     category: event?.category || "",
     volunteersNeeded: event?.volunteers.needed || 0,
-    photo: event?.photo || "",
+    photo_url: event?.photo_url || "",
     status: event?.status || "draft"
   });
 
@@ -80,12 +79,12 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
       });
       const data = await res.json();
       if (data.success) {
-        setFormData((prev) => ({ ...prev, photo: data.data.url }));
+        setFormData((prev) => ({ ...prev, photo_url: data.data.url }));
         toast.success("Фото успешно загружено");
       } else {
         toast.error("Не удалось загрузить фото");
       }
-    } catch (error) {
+    } catch {
       toast.error("Ошибка загрузки фото");
     } finally {
       setIsUploading(false);
@@ -105,23 +104,18 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
       message: {
         action: isEditing ? "update_event" : "create_event",
         data: {
-        ...(isEditing
-          ? {
-              _id: event?.id,
-              updated_by: userId
-            }
-          : {
-              id: Date.now().toString(),
-              created_by: userId
-            }),
-        title: formData.title,
-        description: formData.description,
-        start_datetime: startDateTime,
-        location: formData.location,
-        required_volunteers: Number(formData.volunteersNeeded),
-        photo_url: formData.photo || null,
-        category: formData.category
-      }
+          ...(isEditing
+            ? { _id: event?.id, updated_by: userId }
+            : { id: Date.now().toString(), created_by: userId }),
+          title: formData.title,
+          description: formData.description,
+          start_datetime: startDateTime,
+          location: formData.location,
+          required_volunteers: Number(formData.volunteersNeeded),
+          photo_url: formData.photo_url || null,
+          category: formData.category,
+          status: isDraft ? "draft" : formData.status || "active"
+        }
       }
     };
 
@@ -133,10 +127,10 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? common.edit + " " + events.eventTitle : events.createEvent}
+            {isEditing ? `${common.edit} ${event?.title}` : events.createEvent}
           </DialogTitle>
           <DialogDescription>
             {isEditing
@@ -145,128 +139,132 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">{events.eventTitle}</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleChange("title", e.target.value)}
-              placeholder="Введите название мероприятия"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">{events.description}</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Опишите ваше мероприятие"
-              rows={4}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="date">{events.date}</Label>
+              <Label htmlFor="title">{events.eventTitle}</Label>
               <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleChange("date", e.target.value)}
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Введите название мероприятия"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time">{events.time}</Label>
-              <Input
-                id="time"
-                type="time"
-                value={formData.time}
-                onChange={(e) => handleChange("time", e.target.value)}
+              <Label htmlFor="description">{events.description}</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Опишите ваше мероприятие"
+                rows={4}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">{events.location}</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => handleChange("location", e.target.value)}
-              placeholder="Введите место проведения мероприятия"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">{events.date}</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleChange("date", e.target.value)}
+                />
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">{events.category}</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleChange("category", value)}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Выберите категорию" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="animals">{categories.animals}</SelectItem>
-                  <SelectItem value="environment">{categories.environment}</SelectItem>
-                  <SelectItem value="health">{categories.health}</SelectItem>
-                  <SelectItem value="education">{categories.education}</SelectItem>
-                  <SelectItem value="poverty">{categories.poverty}</SelectItem>
-                  <SelectItem value="community">{categories.community}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label htmlFor="time">{events.time}</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => handleChange("time", e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="volunteers">{events.volunteersNeeded}</Label>
+              <Label htmlFor="location">{events.location}</Label>
               <Input
-                id="volunteers"
-                type="number"
-                min="1"
-                value={formData.volunteersNeeded}
-                onChange={(e) => handleChange("volunteersNeeded", e.target.value)}
+                id="location"
+                value={formData.location}
+                onChange={(e) => handleChange("location", e.target.value)}
+                placeholder="Введите место проведения мероприятия"
               />
             </div>
-            <div className="space-y-2">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">{events.category}</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleChange("category", value)}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="animals">{categories.animals}</SelectItem>
+                    <SelectItem value="environment">{categories.environment}</SelectItem>
+                    <SelectItem value="health">{categories.health}</SelectItem>
+                    <SelectItem value="education">{categories.education}</SelectItem>
+                    <SelectItem value="poverty">{categories.poverty}</SelectItem>
+                    <SelectItem value="community">{categories.community}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="volunteers">{events.volunteersNeeded}</Label>
+                <Input
+                  id="volunteers"
+                  type="number"
+                  min="1"
+                  value={formData.volunteersNeeded}
+                  onChange={(e) => handleChange("volunteersNeeded", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="status">Статус</Label>
                 <Select
-                    value={formData.status}
-                    onValueChange={(value) => handleChange("status", value)}
-                  >
-                    <SelectTrigger id="status">
-                        <SelectValue placeholder="Выберите статус" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="draft">Черновик</SelectItem>
-                        <SelectItem value="active">Активно</SelectItem>
-                        <SelectItem value="completed">Завершено</SelectItem>
-                        <SelectItem value="cancelled">Отменено</SelectItem>
-                    </SelectContent>
+                  value={formData.status}
+                  onValueChange={(value) => handleChange("status", value)}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Выберите статус" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Черновик</SelectItem>
+                    <SelectItem value="active">Активно</SelectItem>
+                    <SelectItem value="completed">Завершено</SelectItem>
+                    <SelectItem value="cancelled">Отменено</SelectItem>
+                  </SelectContent>
                 </Select>
-             </div>
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="photo">{events.photo}</Label>
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    uploadImageToImgBB(e.target.files[0]);
-                  }
-                }}
-              />
-              {isUploading && <p className="text-sm text-gray-500">Загрузка фото...</p>}
-              {formData.photo && (
-                <img
-                  src={formData.photo}
-                  alt="uploaded"
-                  className="mt-2 max-h-40 rounded border"
+              </div>
+
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="photo_url">{events.photo_url}</Label>
+                <Input
+                  id="photo_url"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      uploadImageToImgBB(e.target.files[0]);
+                    }
+                  }}
                 />
-              )}
+                {isUploading && <p className="text-sm text-gray-500">Загрузка фото...</p>}
+                {formData.photo_url && (
+                  <img
+                    src={formData.photo_url}
+                    alt="uploaded"
+                    className="mt-2 max-h-40 rounded border"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

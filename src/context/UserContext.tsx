@@ -39,6 +39,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const loadUser = async () => {
     setIsLoading(true);
     try {
+      const token = authService.getToken();
+      const userId = authService.getUserId();
+      console.log("loadUser: token=", token, "userId=", userId);
+
+      if (!token || !userId) {
+        setCurrentUser(null);
+        return;
+      }
+
       const user = await authService.getCurrentUser();
       setCurrentUser(user);
     } catch (e) {
@@ -48,6 +57,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadUser();
