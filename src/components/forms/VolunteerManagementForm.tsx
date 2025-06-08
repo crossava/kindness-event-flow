@@ -1,16 +1,38 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, UserCheck, Clipboard, MessageSquare } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  CheckCircle,
+  UserCheck,
+  Clipboard,
+  MessageSquare,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import { russianContent } from "@/lib/localization/russianContent";
 import { TaskAssignmentForm } from "./TaskAssignmentForm";
 import { MessageForm } from "./MessageForm";
+import { useUserContext } from "@/context/UserContext";
 
 interface Volunteer {
   _id: string;
@@ -24,6 +46,7 @@ interface VolunteerManagementFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventTitle: string;
+  eventId: string;
   volunteers: Volunteer[];
 }
 
@@ -31,9 +54,12 @@ export const VolunteerManagementForm = ({
   open,
   onOpenChange,
   eventTitle,
+  eventId,
   volunteers,
 }: VolunteerManagementFormProps) => {
   const { volunteers: vol, common } = russianContent;
+  const { currentUser } = useUserContext();
+
   const [activeTab, setActiveTab] = useState("volunteers");
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
@@ -186,7 +212,13 @@ export const VolunteerManagementForm = ({
           <TaskAssignmentForm
             open={isAssignTaskOpen}
             onOpenChange={setIsAssignTaskOpen}
-            volunteer={selectedVolunteer}
+            volunteer={{
+              id: selectedVolunteer._id,
+              name: selectedVolunteer.full_name,
+              email: selectedVolunteer.email,
+            }}
+            eventId={eventId}
+            createdBy={currentUser.id}
             onAssign={handleTaskAssigned}
           />
           <MessageForm

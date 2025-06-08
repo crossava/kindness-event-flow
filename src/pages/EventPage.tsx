@@ -20,6 +20,9 @@ import {
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import { authService } from "@/api/authService";
 import { useEventContext } from "@/context/EventContext";
+import { useUserContext } from "@/context/UserContext";
+import { AuthModal } from "@/components/layout/AuthModal";
+import { RegisterModal } from "@/components/layout/RegisterModal";
 
 const EventPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,12 +31,15 @@ const EventPage = () => {
   const [isUnregisterDialogOpen, setIsUnregisterDialogOpen] = useState(false);
   const [isUserRegistered, setIsUserRegistered] = useState(false);
 
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  const { isAuthenticated, setCurrentUser } = useUserContext();
   const { sendMessage, lastMessage } = useSharedWebSocket();
   const userId = authService.getUserId();
 
   const event = events.find((e) => e.id === id);
 
-  // Получение события по id, если оно отсутствует в контексте
   useEffect(() => {
     if (!event && id) {
       sendMessage({
@@ -46,7 +52,6 @@ const EventPage = () => {
     }
   }, [event, id, sendMessage]);
 
-  // Обработка входящих сообщений
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== "string") return;
     try {
@@ -123,7 +128,6 @@ const EventPage = () => {
     }
   }, [lastMessage, id, setEvents, userId]);
 
-  // Проверка регистрации пользователя
   useEffect(() => {
     if (event?.volunteers?.list?.includes(userId)) {
       setIsUserRegistered(true);
@@ -237,7 +241,18 @@ const EventPage = () => {
                 Вы участвуете (отменить)
               </Button>
             ) : (
-              <Button className="w-full" variant="outline" onClick={() => setIsVolunteerDialogOpen(true)}>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setIsAuthModalOpen(true);
+                    localStorage.setItem("redirectAfterLogin", window.location.pathname);
+                  } else {
+                    setIsVolunteerDialogOpen(true);
+                  }
+                }}
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Я волонтёр
               </Button>
@@ -286,6 +301,29 @@ const EventPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Модалки авторизации и регистрации */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={async (user) => {
+          setCurrentUser(user);
+          setIsAuthModalOpen(false);
+          const redirectPath = localStorage.getItem("redirectAfterLogin");
+          if (redirectPath) {
+            window.location.href = redirectPath;
+            localStorage.removeItem("redirectAfterLogin");
+          }
+        }}
+      />
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onRegisterSuccess={() => {
+          setIsRegisterModalOpen(false);
+          setIsAuthModalOpen(true);
+        }}
+      />
     </div>
   );
 };

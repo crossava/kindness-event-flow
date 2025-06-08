@@ -10,6 +10,8 @@ export interface User {
   full_name?: string;
   role?: string;
   created_at?: string;
+  phone?: string;
+  address?: string;
 }
 
 export const authService = {
@@ -39,14 +41,39 @@ export const authService = {
     localStorage.removeItem("user_id");
   },
 
+  // ====== CURRENT USER ======
+  setCurrentUser: (user: User) => {
+    console.log("setCurrentUser", user);
+    console.log("json user", JSON.stringify(user));
+    localStorage.setItem("currentUser", JSON.stringify(user));
+  },
+
+  getCurrentUser: (): User | null => {
+    const raw = localStorage.getItem("currentUser");
+    if (!raw) return null;
+
+    try {
+      console.log("user profile", JSON.parse(raw));
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error("Ошибка при парсинге currentUser:", e);
+      return null;
+    }
+  },
+
+  removeCurrentUser: () => {
+    localStorage.removeItem("currentUser");
+  },
+
   // ====== LOGIN ======
-  login: async (email: string, password: string): Promise<string> => {
+  login: async (email: string, password: string): Promise<User> => {
     const response = await fetch(`${API_BASE_URL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ email, password }),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -54,15 +81,34 @@ export const authService = {
     }
 
     const data = await response.json();
-    const token = data.message.body.access_token;
-    const userId = data.message?.body?.user_id;
+    const userBody = data.message?.body;
 
-    console.log("data post auth", data);
+    const token = userBody?.access_token;
+    const userId = userBody?.user_id;
 
-    if (token) authService.setToken(token);
-    if (userId) authService.setUserId(userId);
+    if (!token || !userId) {
+      throw new Error("Токен или ID пользователя отсутствует");
+    }
 
-    return token;
+    // Извлекаем только нужные поля
+    const user: User = {
+      id: userId,
+      email: userBody.email,
+      full_name: userBody.full_name,
+      role: userBody.role,
+      phone: userBody.phone,
+      address: userBody.address,
+      created_at: userBody.created_at,
+    };
+
+    console.log("userBody from login response", userBody);
+
+    // Сохраняем всё необходимое
+    authService.setToken(token);
+    authService.setUserId(userId);
+    authService.setCurrentUser(user);
+
+    return user;
   },
 
   // ====== LOGOUT ======
@@ -72,6 +118,7 @@ export const authService = {
     }
     authService.removeToken();
     authService.removeUserId();
+    authService.removeCurrentUser();
   },
 
   // ====== REGISTER ======
@@ -80,7 +127,8 @@ export const authService = {
     password: string,
     fullName: string,
     role: string,
-    phone: string
+    phone: string,
+    address: string
   ) => {
     const response = await fetch(`${API_BASE_URL}/register`, {
       method: "POST",
@@ -93,15 +141,19 @@ export const authService = {
         password,
         role,
         phone,
+        address,
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Ошибка регистрации");
+    const data = await response.json();
+
+    if (!response.ok || data?.message?.status === "error") {
+      const msg =
+        data?.message?.text || data?.message || "Ошибка регистрации";
+      throw new Error(msg);
     }
 
-    return await response.json();
+    return data;
   },
 
   // ====== CONFIRM REGISTRATION ======
@@ -125,70 +177,10 @@ export const authService = {
     return await response.json();
   },
 
-  // ====== GET CURRENT USER ======
-  getCurrentUser: (): User | null => {
-    const token = authService.getToken();
-    const userId = authService.getUserId();
-
-    if (!token || !userId) return null;
-
-    try {
-      const payload = JSON.parse(
-        atob(token.split('.')[1])
-      ) as { sub: string; full_name?: string; role?: string; exp: number };
-
-      return {
-        id: userId,
-        email: payload.sub,
-        full_name: payload.full_name,
-        role: payload.role,
-      };
-    } catch (error) {
-      console.error("Ошибка при разборе токена:", error);
-      return null;
-    }
-  },
-
   // ====== INIT WEBSOCKET ======
   initWebSocket: (token: string | null): WebSocket | null => {
     if (!token) return null;
     const ws = new WebSocket(`${WS_URL}?token=${token}`);
     return ws;
-  },
-
-  // ====== CREATE EVENT (через WebSocket) ======
-  createEvent: async (
-    eventData: {
-      title: string;
-      description: string;
-      start_datetime: string;
-      location: string;
-      required_volunteers: number;
-      category: string;
-      created_by: string;
-      photo_url: string;
-    },
-    socket: WebSocket | null
-  ): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-      if (!socket || socket.readyState !== WebSocket.OPEN) {
-        return reject(new Error("WebSocket не подключён"));
-      }
-
-      const message = {
-        topic: "event_requests",
-        message: {
-          action: "create_event",
-          data: eventData,
-        },
-      };
-
-      try {
-        socket.send(JSON.stringify(message));
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
   },
 };

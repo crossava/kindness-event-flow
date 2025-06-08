@@ -1,5 +1,4 @@
-﻿// src/components/layout/RegisterModal.tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+﻿import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,11 @@ interface RegisterModalProps {
 export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterModalProps) => {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [role, setRole] = useState("user");
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -28,7 +29,7 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
     setError(null);
 
     try {
-      await authService.register(email, password, fullName, role, phone);
+      await authService.register(email, password, fullName, role, phone, address);
       setShowConfirmation(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка регистрации");
@@ -45,8 +46,6 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
   const handleBackToRegister = () => {
     setShowConfirmation(false);
   };
-
-  const [phone, setPhone] = useState("");
 
   return (
     <>
@@ -68,26 +67,37 @@ export const RegisterModal = ({ isOpen, onClose, onRegisterSuccess }: RegisterMo
               />
             </div>
             <div>
-                <Label htmlFor="fullName">Полное имя</Label>
-                <Input
+              <Label htmlFor="fullName">Полное имя</Label>
+              <Input
                 id="fullName"
                 type="text"
                 placeholder="Иван Иванов"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                />
+              />
             </div>
             <div>
-                <Label htmlFor="phone">Телефон</Label>
-                <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+7 900 123-45-67"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                />
+              <Label htmlFor="phone">Телефон</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+7 900 123-45-67"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="address">Адрес</Label>
+              <Input
+                id="address"
+                type="text"
+                placeholder="г. Екатеринбург, ул. Ленина, д. 10"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
             </div>
             <div>
               <Label htmlFor="password">Пароль</Label>

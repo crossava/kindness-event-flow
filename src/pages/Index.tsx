@@ -1,18 +1,19 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import { StatsOverview } from "@/components/stats/StatsOverview";
-import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import { useEventContext } from "@/context/EventContext";
+import { useUserContext } from "@/context/UserContext";
 import { russianContent } from "@/lib/localization/russianContent";
+import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 
 const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { events, setEvents } = useEventContext();
+  const { setUsers } = useUserContext();
   const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
 
   const fetchEvents = (category: string) => {
@@ -50,12 +51,17 @@ const HomePage = () => {
 
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== "string") return;
+
     try {
       const data = JSON.parse(lastMessage);
       const action = data?.message?.action;
+      const status = data?.message?.status;
       const payload = data?.message?.message;
 
-      if ((action === "get_upcoming_events" || action === "get_event_by_title") && payload?.status === "success") {
+      if (
+        (action === "get_upcoming_events" || action === "get_event_by_title") &&
+        payload?.status === "success"
+      ) {
         const transformed = (payload.events || []).map((e: any) => ({
           ...e,
           id: e._id,
@@ -73,13 +79,24 @@ const HomePage = () => {
           },
           image: e.photo_url || "https://placehold.co/600x400?text=Event",
         }));
-
         setEvents(transformed);
       }
+
+      if (action === "get_all_users" && status === "success") {
+        const transformedUsers = (payload.users || []).map((user: any) => ({
+          ...user,
+          id: user._id, // 🔄 заменяем _id на id
+        }));
+        console.log("transformedUsers", transformedUsers);
+
+        setUsers(transformedUsers);
+        console.log("✅ Users set:", transformedUsers);
+      }
     } catch (err) {
-      console.error("Ошибка при обработке WebSocket-сообщения:", err);
+      console.error("❌ Ошибка при обработке WebSocket-сообщения:", err);
     }
   }, [lastMessage]);
+
 
   const filteredEvents = events.filter((event) => {
     const query = searchQuery.toLowerCase();

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { russianContent } from "@/lib/localization/russianContent";
+import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 
 interface Volunteer {
   id: string;
@@ -17,6 +17,8 @@ interface TaskAssignmentFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   volunteer: Volunteer;
+  eventId: string;
+  createdBy: string;
   onAssign: () => void;
 }
 
@@ -24,9 +26,13 @@ export const TaskAssignmentForm = ({
   open,
   onOpenChange,
   volunteer,
+  eventId,
+  createdBy,
   onAssign,
 }: TaskAssignmentFormProps) => {
+  const { sendMessage } = useSharedWebSocket();
   const { volunteers: vol, common } = russianContent;
+
   const [task, setTask] = useState({
     title: "",
     description: "",
@@ -39,20 +45,27 @@ export const TaskAssignmentForm = ({
 
   const handleSubmit = () => {
     if (!task.title || !task.description || !task.dueDate) {
-      // You could show an error message here
       return;
     }
-    
-    // Here you would typically send this to your backend
-    console.log("Assigning task:", {
-      volunteerId: volunteer.id,
-      volunteerName: volunteer.name,
-      volunteerEmail: volunteer.email,
-      task,
+
+    sendMessage({
+      topic: "event_requests",
+      message: {
+        action: "assign_task",
+        data: {
+          title: task.title,
+          description: task.description,
+          deadline: new Date(task.dueDate).toISOString(),
+          assigned_to: volunteer.id,
+          event_id: eventId,
+          attachments: [],
+          comments: [],
+          created_by: createdBy,
+        },
+      },
     });
-    
-    // Call the callback
-    onAssign();
+
+    onAssign(); // закрываем модалку и т.д.
   };
 
   return (

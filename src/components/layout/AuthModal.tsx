@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/api/authService";
+import {useUserContext} from "@/context/UserContext.tsx";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) =
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setCurrentUser } = useUserContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,20 +27,17 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }: AuthModalProps) =
     setError(null);
 
     try {
-      // Используем метод login из authService
       const token = await authService.login(email, password);
-      console.log("Успешный вход. Токен:", token);
 
-      // 1. Закрываем модальное окно
+      // 👇 ЗАПРОС настоящего пользователя после логина
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+      }
+
       onClose();
-
-      // 2. Сохраняем токен через authService и передаем в родительский компонент
-      authService.setToken(token);
       onLoginSuccess(token);
-
-      // 3. Перенаправляем на /dashboard
       navigate("/dashboard");
-
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка сервера");
     } finally {

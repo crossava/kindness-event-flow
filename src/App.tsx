@@ -34,9 +34,7 @@ const App = () => (
 const AppWithUserContext = () => {
   const { isLoading } = useUserContext();
 
-  if (isLoading) {
-    return <div>Загрузка...</div>;
-  }
+  if (isLoading) return <div>Загрузка пользователя...</div>;
 
   return (
     <WebSocketProvider>

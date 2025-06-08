@@ -48,9 +48,9 @@ import { russianContent } from "@/lib/localization/russianContent";
 import { EventForm } from "@/components/forms/EventForm";
 import { VolunteerManagementForm } from "@/components/forms/VolunteerManagementForm";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import { authService } from "@/api/authService";
 import { useUserContext } from "@/context/UserContext";
+import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 
 const OrganizerPanel = () => {
   const { common, events, categories, modals } = russianContent;
@@ -431,6 +431,7 @@ const OrganizerPanel = () => {
           open={isVolunteerManagementOpen}
           onOpenChange={setIsVolunteerManagementOpen}
           eventTitle={currentEventForVolunteers.title}
+          eventId={currentEventForVolunteers.id}
           volunteers={users.filter((u) =>
             currentEventForVolunteers.volunteers?.ids.includes(u.id)
           )}

@@ -1,4 +1,3 @@
-// src/context/UserContext.tsx
 import React, {
   createContext,
   useContext,
@@ -6,7 +5,6 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { authService } from "@/api/authService";
 
 export interface User {
   id: string;
@@ -14,6 +12,8 @@ export interface User {
   full_name?: string;
   role?: string;
   created_at?: string;
+  phone?: string;
+  address?: string;
 }
 
 interface UserContextType {
@@ -21,7 +21,7 @@ interface UserContextType {
   setUsers: (users: User[]) => void;
   getUserById: (id: string) => User | undefined;
   currentUser: User | null;
-  setCurrentUser: (user: User | null) => void; // <--- Добавить это
+  setCurrentUser: (user: User | null) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
   reloadCurrentUser: () => Promise<void>;
@@ -36,36 +36,35 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const getUserById = (id: string) => users.find((user) => user.id === id);
 
-  const loadUser = async () => {
-    setIsLoading(true);
-    try {
-      const token = authService.getToken();
-      const userId = authService.getUserId();
-      console.log("loadUser: token=", token, "userId=", userId);
-
-      if (!token || !userId) {
-        setCurrentUser(null);
-        return;
-      }
-
-      const user = await authService.getCurrentUser();
-      setCurrentUser(user);
-    } catch (e) {
-      console.error("Ошибка загрузки пользователя", e);
+  const reloadCurrentUser = async () => {
+    const savedUser = localStorage.getItem("currentUser");
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    } else {
       setCurrentUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-
   useEffect(() => {
-    loadUser();
+    const savedUser = localStorage.getItem("currentUser");
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("currentUser");
+        setCurrentUser(null);
+      }
+    }
+    setIsLoading(false);
   }, []);
 
-  const reloadCurrentUser = async () => {
-    await loadUser();
-  };
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("currentUser");
+    }
+  }, [currentUser]);
 
   return (
     <UserContext.Provider
@@ -74,7 +73,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUsers,
         getUserById,
         currentUser,
-        setCurrentUser, // <--- Обязательно добавь это
+        setCurrentUser,
         isLoading,
         isAuthenticated: !!currentUser,
         reloadCurrentUser,
