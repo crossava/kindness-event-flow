@@ -104,7 +104,7 @@ export const VolunteerManagementForm = ({
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {common.manage} {common.volunteers}: {eventTitle}
+              Управление Волонтерами: {eventTitle}
             </DialogTitle>
           </DialogHeader>
 
@@ -113,10 +113,6 @@ export const VolunteerManagementForm = ({
               <TabsTrigger value="volunteers" className="flex items-center space-x-2">
                 <UserCheck className="h-4 w-4" />
                 <span>{common.volunteers}</span>
-              </TabsTrigger>
-              <TabsTrigger value="tasks" className="flex items-center space-x-2">
-                <Clipboard className="h-4 w-4" />
-                <span>{vol.assignTask}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -191,18 +187,6 @@ export const VolunteerManagementForm = ({
               </div>
             </TabsContent>
 
-            <TabsContent value="tasks">
-              <div className="text-center py-12">
-                <Clipboard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Управление задачами</h3>
-                <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                  Выберите волонтера из списка волонтеров, чтобы назначить ему задачу.
-                </p>
-                <Button onClick={() => setActiveTab("volunteers")}>
-                  {common.view} {common.volunteers}
-                </Button>
-              </div>
-            </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>

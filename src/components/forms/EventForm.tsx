@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { russianContent } from "@/lib/localization/russianContent";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
 import { authService } from "@/api/authService.ts";
+import {SERVER_IP} from "@/hooks/DevelopmentConfig.ts";
 
 const IMGBB_API_KEY = "fe4ecad60723598a90505950241cdeff"; // Замените на ваш API ключ
 
@@ -67,29 +68,39 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const uploadImageToImgBB = async (file: File) => {
+  const uploadImageToYandex = async (file: File) => {
     setIsUploading(true);
     const form = new FormData();
-    form.append("image", file);
+    form.append("attachments", file); // только один файл
+    form.append("task_id", "event_cover"); // фиктивный task_id (или придумай подходящий)
 
     try {
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      const response = await fetch(`${SERVER_IP}/upload-task-attachments`, {
         method: "POST",
         body: form
       });
-      const data = await res.json();
-      if (data.success) {
-        setFormData((prev) => ({ ...prev, photo_url: data.data.url }));
-        toast.success("Фото успешно загружено");
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        const uploadedUrls = result.uploaded || [];
+        if (uploadedUrls.length > 0) {
+          setFormData((prev) => ({ ...prev, photo_url: uploadedUrls[0] }));
+          toast.success("Фото успешно загружено");
+        } else {
+          toast.error("Сервер не вернул ссылку на изображение");
+        }
       } else {
-        toast.error("Не удалось загрузить фото");
+        toast.error("Ошибка при загрузке файла");
       }
-    } catch {
+    } catch (err) {
+      console.error("Ошибка загрузки фото:", err);
       toast.error("Ошибка загрузки фото");
     } finally {
       setIsUploading(false);
     }
   };
+
 
   const handleSubmit = (isDraft: boolean = false) => {
     if (!formData.title || !formData.description || !formData.date || !formData.time || !formData.location) {
@@ -252,7 +263,7 @@ export const EventForm = ({ open, onOpenChange, event, onSave }: EventFormProps)
                   accept="image/*"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      uploadImageToImgBB(e.target.files[0]);
+                      uploadImageToYandex(e.target.files[0]);
                     }
                   }}
                 />

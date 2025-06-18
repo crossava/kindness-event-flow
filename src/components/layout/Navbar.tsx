@@ -14,8 +14,8 @@ export const Navbar = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  const { isAuthenticated, setCurrentUser } = useUserContext();
+  const { isAuthenticated, setCurrentUser, currentUser } = useUserContext();
+  const canViewOrganizerPanel = currentUser?.role === "organizer" || currentUser?.role === "both";
 
   const handleLogout = () => {
     authService.logout(null);
@@ -53,13 +53,24 @@ export const Navbar = () => {
             Дашборд
           </Link>
 
+          {canViewOrganizerPanel && (
+            <Link
+              to="/organizer"
+              className="text-foreground hover:text-charity-primary transition"
+              onClick={(e) => handleProtectedClick(e, "/organizer")}
+            >
+              Панель управления
+            </Link>
+          )}
+
           <Link
-            to="/organizer"
+            to="/dashboard?tab=profile"
             className="text-foreground hover:text-charity-primary transition"
-            onClick={(e) => handleProtectedClick(e, "/organizer")}
+            onClick={(e) => handleProtectedClick(e, "/dashboard?tab=profile")}
           >
-            Панель управления
+            Профиль
           </Link>
+
 
           {/*<Button asChild>*/}
           {/*  <Link to="/organizer" onClick={(e) => handleProtectedClick(e, "/organizer")}>*/}
@@ -112,13 +123,24 @@ export const Navbar = () => {
             Дашборд
           </Link>
 
+          {canViewOrganizerPanel && (
+            <Link
+              to="/organizer"
+              className="text-foreground hover:text-charity-primary transition"
+              onClick={(e) => handleProtectedClick(e, "/organizer")}
+            >
+              Панель управления
+            </Link>
+          )}
+
           <Link
-            to="/organizer"
-            className="text-foreground hover:text-charity-primary transition px-2 py-2"
-            onClick={(e) => handleProtectedClick(e, "/organizer")}
+            to="/dashboard?tab=profile"
+            className="text-foreground hover:text-charity-primary transition"
+            onClick={(e) => handleProtectedClick(e, "/dashboard?tab=profile")}
           >
-            Панель управления
+            Профиль
           </Link>
+
 
           {isAuthenticated ? (
             <Button variant="ghost" className="justify-start" onClick={handleLogout}>

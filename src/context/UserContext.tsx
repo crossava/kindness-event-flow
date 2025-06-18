@@ -14,6 +14,8 @@ export interface User {
   created_at?: string;
   phone?: string;
   address?: string;
+  telegram_id?: string
+  vk_id?: string
 }
 
 interface UserContextType {

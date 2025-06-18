@@ -18,6 +18,8 @@ import { WebSocketProvider } from "@/hooks/WebSocketProvider";
 import { UserProvider, useUserContext } from "@/context/UserContext";
 import { EventProvider } from "@/context/EventContext";
 import PrivateRoute from "@/components/PrivateRoute.tsx";
+import {DashboardContext, DashboardProvider} from "@/context/DashboardContext.tsx";
+import {OrganizerPanelProvider} from "@/context/OrganizerPanelContext.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,37 +39,42 @@ const AppWithUserContext = () => {
   if (isLoading) return <div>Загрузка пользователя...</div>;
 
   return (
-    <WebSocketProvider>
-      <Sonner />
-      <Toaster />
-      <EventProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<HomePage />} />
-              <Route path="event/:id" element={<EventPage />} />
-              <Route
-                path="dashboard"
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="organizer"
-                element={
-                  <PrivateRoute>
-                    <OrganizerPanel />
-                  </PrivateRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </EventProvider>
-    </WebSocketProvider>
+    <EventProvider>
+      <DashboardProvider>
+          <OrganizerPanelProvider>
+            <WebSocketProvider>
+              <Sonner />
+              <Toaster />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Layout />}>
+                      <Route index element={<HomePage />} />
+                      <Route path="event/:id" element={<EventPage />} />
+                      <Route
+                        path="dashboard"
+                        element={
+                          <PrivateRoute>
+                            <Dashboard />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                          path="organizer"
+                          element={
+                            <PrivateRoute allowedRoles={["organizer", "both"]}>
+                              <OrganizerPanel />
+                            </PrivateRoute>
+                          }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
+                  </Routes>
+                </BrowserRouter>
+              </WebSocketProvider>
+            </OrganizerPanelProvider>
+      </DashboardProvider>
+    </EventProvider>
+
   );
 };
 

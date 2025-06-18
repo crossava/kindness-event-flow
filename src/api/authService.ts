@@ -12,16 +12,14 @@ export interface User {
   created_at?: string;
   phone?: string;
   address?: string;
+  telegram_id?: string;
+  vk_id?: string;
 }
 
 export const authService = {
   // ====== TOKEN ======
   setToken: (token: string) => {
     localStorage.setItem("token", token);
-  },
-
-  getToken: (): string | null => {
-    return localStorage.getItem("token");
   },
 
   removeToken: () => {
@@ -83,10 +81,9 @@ export const authService = {
     const data = await response.json();
     const userBody = data.message?.body;
 
-    const token = userBody?.access_token;
     const userId = userBody?.user_id;
 
-    if (!token || !userId) {
+    if (!userId) {
       throw new Error("Токен или ID пользователя отсутствует");
     }
 
@@ -99,12 +96,12 @@ export const authService = {
       phone: userBody.phone,
       address: userBody.address,
       created_at: userBody.created_at,
+      telegram_id: userBody.telegram_id,
+      vk_id: userBody.vk_id,
     };
 
     console.log("userBody from login response", userBody);
 
-    // Сохраняем всё необходимое
-    authService.setToken(token);
     authService.setUserId(userId);
     authService.setCurrentUser(user);
 

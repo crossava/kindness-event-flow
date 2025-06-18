@@ -5,19 +5,23 @@ import { useUserContext } from "@/context/UserContext";
 
 interface PrivateRouteProps {
   children: ReactNode;
+  allowedRoles?: string[];
 }
 
-const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const { isAuthenticated, isLoading } = useUserContext();
+const PrivateRoute = ({ children, allowedRoles }: PrivateRouteProps) => {
+  const { isAuthenticated, isLoading, currentUser } = useUserContext();
   const location = useLocation();
 
   if (isLoading) {
-    return <div>Загрузка...</div>; // можно заменить на ваш Loader компонент
+    return <div>Загрузка...</div>;
   }
 
   if (!isAuthenticated) {
-    // ❗ Сохраняем путь, чтобы вернуть пользователя обратно после логина
     localStorage.setItem("redirectAfterLogin", location.pathname);
+    return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(currentUser?.role)) {
     return <Navigate to="/" replace />;
   }
 

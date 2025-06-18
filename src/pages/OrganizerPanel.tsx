@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,10 +51,12 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { authService } from "@/api/authService";
 import { useUserContext } from "@/context/UserContext";
 import { useSharedWebSocket } from "@/hooks/WebSocketProvider";
+import {OrganizerPanelContext} from "@/context/OrganizerPanelContext.tsx";
+import {ReportUploadModal} from "@/components/modals/ReportUploadModal.tsx";
 
 const OrganizerPanel = () => {
   const { common, events, categories, modals } = russianContent;
-  const [organizerEvents, setOrganizerEvents] = useState<any[]>([]);
+  const {organizerEvents, setOrganizerEvents } = useContext(OrganizerPanelContext);
   const [activeTab, setActiveTab] = useState("events");
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,17 +69,21 @@ const OrganizerPanel = () => {
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [isVolunteerDeleteConfirmOpen, setIsVolunteerDeleteConfirmOpen] = useState(false);
   const [volunteerToDelete, setVolunteerToDelete] = useState<string | null>(null);
+  const [isReportUploadOpen, setIsReportUploadOpen] = useState(false);
+  const [currentEventForReport, setCurrentEventForReport] = useState<any | null>(null);
 
   const [selectedVolunteer, setSelectedVolunteer] = useState<any | null>(null);
   const [isVolunteerEventsDialogOpen, setIsVolunteerEventsDialogOpen] = useState(false);
 
   const didRequestRef = useRef(false);
-  const { sendMessage, lastMessage, isConnected } = useSharedWebSocket();
+  const { sendMessage, lastMessage, socketRef } = useSharedWebSocket();
+  const socketReady = socketRef.current?.readyState === WebSocket.OPEN;
+
   const userId = authService.getUserId();
   const { users, setUsers } = useUserContext();
 
   useEffect(() => {
-    if (isConnected && !didRequestRef.current) {
+    if (socketReady && !didRequestRef.current) {
       sendMessage({
         topic: "event_requests",
         message: {
@@ -86,17 +92,9 @@ const OrganizerPanel = () => {
         },
       });
 
-      sendMessage({
-        topic: "user_requests",
-        message: {
-          action: "get_all_users",
-          data: {},
-        },
-      });
-
       didRequestRef.current = true;
     }
-  }, [isConnected, sendMessage]);
+  }, [socketReady, sendMessage]);
 
   useEffect(() => {
     if (!lastMessage || typeof lastMessage !== "string") return;
@@ -162,6 +160,58 @@ const OrganizerPanel = () => {
         toast.success("Мероприятие удалено.");
       }
 
+      if (action === "register_volunteer" && payload?.status === "success") {
+        const eventId = payload._id;
+        const userId = payload.user_id;
+
+        if (!eventId || !userId) return;
+
+        setOrganizerEvents((prev) =>
+          prev.map((event) => {
+            if (event.id !== eventId) return event;
+
+            const alreadyExists = event.volunteers.ids.includes(userId);
+            if (alreadyExists) return event;
+
+            const updatedIds = [...event.volunteers.ids, userId];
+
+            return {
+              ...event,
+              volunteers: {
+                ...event.volunteers,
+                ids: updatedIds,
+                joined: updatedIds.length,
+              },
+            };
+          })
+        );
+      }
+
+      if (action === "unregister_volunteer" && payload?.status === "success") {
+        const eventId = payload._id;
+        const userId = payload.user_id;
+
+        if (!eventId || !userId) return;
+
+        setOrganizerEvents((prev) =>
+          prev.map((event) => {
+            if (event.id !== eventId) return event;
+
+            const updatedIds = event.volunteers.ids.filter((id: string) => id !== userId);
+
+            return {
+              ...event,
+              volunteers: {
+                ...event.volunteers,
+                ids: updatedIds,
+                joined: updatedIds.length,
+              },
+            };
+          })
+        );
+      }
+
+
     } catch (err) {
       console.error("Ошибка обработки сообщения:", err);
     }
@@ -192,11 +242,19 @@ const OrganizerPanel = () => {
   };
 
   const handleDeleteEvent = () => {
-    if (!eventToDelete || !isConnected) return;
+    if (!eventToDelete || !socketReady) return;
     sendMessage({
       topic: "event_requests",
       message: {
         action: "delete_event",
+        data: { _id: eventToDelete },
+      },
+    });
+
+    sendMessage({
+      topic: "event_requests",
+      message: {
+        action: "delete_tasks_by_event_id",
         data: { _id: eventToDelete },
       },
     });
@@ -323,6 +381,14 @@ const OrganizerPanel = () => {
                           <DropdownMenuItem onClick={() => handleManageVolunteers(event.id)}>
                             {events.manageVolunteers}
                           </DropdownMenuItem>
+                          {event.status === "completed" && (
+                            <DropdownMenuItem onClick={() => {
+                              setCurrentEventForReport(event);
+                              setIsReportUploadOpen(true);
+                            }}>
+                              Отчёт
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-destructive" onClick={() => {
                             setEventToDelete(event.id);
                             setIsDeleteConfirmationOpen(true);
@@ -455,6 +521,19 @@ const OrganizerPanel = () => {
         onConfirm={handleDeleteVolunteer}
         danger={true}
       />
+
+      {currentEventForReport && (
+      <ReportUploadModal
+        open={isReportUploadOpen}
+        onOpenChange={setIsReportUploadOpen}
+        event={currentEventForReport}
+        sendMessage={sendMessage}
+        onUploadSuccess={() => {
+          setCurrentEventForReport(null);
+        }}
+      />
+    )}
+
     </div>
   );
 };

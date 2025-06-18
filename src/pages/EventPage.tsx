@@ -36,7 +36,8 @@ const EventPage = () => {
 
   const { isAuthenticated, setCurrentUser } = useUserContext();
   const { sendMessage, lastMessage } = useSharedWebSocket();
-  const userId = authService.getUserId();
+  const { currentUser } = useUserContext();
+  const canParticipate = currentUser?.role === "volunteer" || currentUser?.role === "both";
 
   const event = events.find((e) => e.id === id);
 
@@ -81,7 +82,7 @@ const EventPage = () => {
       if (
         action === "register_volunteer" &&
         data?.message?.message?.status === "success" &&
-        data.message.message.user_id === userId &&
+        data.message.message.user_id === currentUser.id &&
         data.message.message._id === id
       ) {
         setIsUserRegistered(true);
@@ -93,7 +94,7 @@ const EventPage = () => {
                   volunteers: {
                     ...ev.volunteers,
                     joined: ev.volunteers.joined + 1,
-                    list: [...(ev.volunteers.list || []), userId],
+                    list: [...(ev.volunteers.list || []), currentUser.id],
                   },
                 }
               : ev
@@ -104,7 +105,7 @@ const EventPage = () => {
       if (
         action === "unregister_volunteer" &&
         data?.message?.message?.status === "success" &&
-        data.message.message.user_id === userId &&
+        data.message.message.user_id === currentUser.id &&
         data.message.message._id === id
       ) {
         setIsUserRegistered(false);
@@ -116,7 +117,7 @@ const EventPage = () => {
                   volunteers: {
                     ...ev.volunteers,
                     joined: Math.max(ev.volunteers.joined - 1, 0),
-                    list: (ev.volunteers.list || []).filter((uid) => uid !== userId),
+                    list: (ev.volunteers.list || []).filter((uid) => uid !== currentUser.id),
                   },
                 }
               : ev
@@ -126,13 +127,14 @@ const EventPage = () => {
     } catch (err) {
       console.error("Ошибка обработки WebSocket-сообщения:", err);
     }
-  }, [lastMessage, id, setEvents, userId]);
+  }, [lastMessage, id, setEvents, currentUser]);
 
   useEffect(() => {
-    if (event?.volunteers?.list?.includes(userId)) {
+    if (currentUser === null) return;
+    if (event?.volunteers?.list?.includes(currentUser.id)) {
       setIsUserRegistered(true);
     }
-  }, [event, userId]);
+  }, [event, currentUser]);
 
   if (!event) {
     return (
@@ -164,7 +166,7 @@ const EventPage = () => {
         action: "register_volunteer",
         data: {
           _id: id,
-          user_id: userId,
+          user_id: currentUser.id,
         },
       },
     });
@@ -178,16 +180,23 @@ const EventPage = () => {
         action: "unregister_volunteer",
         data: {
           _id: id,
-          user_id: userId,
+          user_id: currentUser.id,
         },
       },
     });
     setIsUnregisterDialogOpen(false);
   };
 
-  const handleShare = () => {
-    toast.success("Ссылка на событие скопирована!");
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Ссылка на событие скопирована!");
+    } catch (err) {
+      toast.error("Не удалось скопировать ссылку.");
+      console.error("Clipboard error:", err);
+    }
   };
+
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -244,10 +253,13 @@ const EventPage = () => {
               <Button
                 className="w-full"
                 variant="outline"
+                disabled={!canParticipate}
                 onClick={() => {
                   if (!isAuthenticated) {
                     setIsAuthModalOpen(true);
                     localStorage.setItem("redirectAfterLogin", window.location.pathname);
+                  } else if (!canParticipate) {
+                    toast.error("Только волонтёры могут участвовать в мероприятии");
                   } else {
                     setIsVolunteerDialogOpen(true);
                   }
@@ -266,7 +278,6 @@ const EventPage = () => {
         </div>
       </div>
 
-      {/* Подтверждение регистрации */}
       <Dialog open={isVolunteerDialogOpen} onOpenChange={setIsVolunteerDialogOpen}>
         <DialogContent>
           <DialogHeader>

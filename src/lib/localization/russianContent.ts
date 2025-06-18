@@ -32,6 +32,15 @@ export const russianContent = {
     profileInfo: "Информация профиля",
     dashboard: "Панель управления",
   },
+  statuses: {
+    in_progress: "В процессе",
+    completed: "Завершено",
+  },
+  roles:{
+    volunteer: "Волонтер",
+    both: "Волонтер \\ Организатор",
+    organizer: "Организатор"
+  },
   statusTranslations: {
     draft: "Черновик",
     active: "Активно",
